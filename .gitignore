@@ -42,3 +42,6 @@ web/manifest.json
 # Temporary files
 *.tmp
 *.temp
+
+# Backup nested git metadata
+.git-backup/

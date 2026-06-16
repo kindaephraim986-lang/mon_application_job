@@ -1,0 +1,83 @@
+# 🎯 ULTRA-SIMPLIFIÉ - SEULEMENT LES ÉTAPES
+## (Pas de blabla, juste les actions)
+
+---
+
+## 🟢 ÉTAPE 1: WAMP
+```
+Clic WAMP → Start All → Attendre vert ✅
+```
+
+---
+
+## 🟢 ÉTAPE 2: BACKEND
+```
+PowerShell 1:
+cd "c:\Users\SYST\Desktop\mon_application_job\afrijob_backend"
+npm start
+
+Résultat: ✅ Connecté à MySQL — base: bddiane_sp
+```
+
+---
+
+## 🟢 ÉTAPE 3: FRONTEND
+```
+PowerShell 2:
+cd "c:\Users\SYST\Desktop\mon_application_job"
+flutter run -d chrome
+
+Résultat: Chrome s'ouvre
+```
+
+---
+
+## 🟢 TEST 1: S'INSCRIRE
+```
+Email: test.candidat@gmail.com
+Password: TestPass123
+Nom: Jean Dupont
+Téléphone: 0123456789
+Filière: Informatique
+Âge: 25
+Domicile: Dakar
+
+→ Vérifier: phpMyAdmin → bddiane_sp → utilisateurs
+  ✅ Ligne créée
+```
+
+---
+
+## 🟢 TEST 2: SE CONNECTER
+```
+Email: test.candidat@gmail.com
+Password: TestPass123
+
+→ Vérifier: Chrome F12 → Application → Local Storage
+  ✅ token existe
+```
+
+---
+
+## 🟢 TEST 3: POSTULER
+```
+1. Cliquer "Offres"
+2. Cliquer "Postuler"
+
+→ Vérifier: phpMyAdmin → bddiane_sp → candidatures
+  ✅ Ligne créée avec candidat_id=1, offre_id=1
+```
+
+---
+
+## ✅ SUCCÈS
+```
+Toutes les données sont en bddiane_sp!
+L'application fonctionne parfaitement!
+```
+
+---
+
+**Durée totale: 15-20 minutes**
+
+**Prêt? Allez-y! 🚀**

@@ -1,0 +1,288 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                 🎉 AFRIJOB - GUIDE DE LANCEMENT FINAL 🎉                   ║
+║                                                                            ║
+║              Comment lancer et tester tout - GUIDE COMPLET                ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+📋 RÉSUMÉ - 3 COMMANDES PRINCIPALES
+════════════════════════════════════════════════════════════════════════════
+
+1️⃣  WAMP → Start All (attendre vert)
+
+2️⃣  PowerShell 1 → npm start (Backend)
+    Résultat: ✅ Connecté à MySQL — base: bddiane_sp
+
+3️⃣  PowerShell 2 → flutter run -d chrome (Frontend)
+    Résultat: Chrome s'ouvre avec l'app
+
+
+🚀 COMMENCEZ MAINTENANT!
+════════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Préparer WAMP (30 secondes)
+──────────────────────────────────────────────────────────────────────────
+
+Actions:
+  1. Clic droit sur WAMP (en bas à droite)
+  2. Cliquer "Start All"
+  3. Attendre que l'icône devienne VERTE
+
+Vérifier:
+  • Ouvrir Chrome
+  • Aller à: http://localhost/phpmyadmin
+  • Chercher: bddiane_sp dans la liste
+  • Si absent: Importer bddiane_sp.sql
+
+
+ÉTAPE 2: Démarrer Backend (1 minute)
+──────────────────────────────────────────────────────────────────────────
+
+Actions dans PowerShell 1:
+  1. Clic droit bureau → Open with PowerShell
+  2. Taper: cd "c:\Users\SYST\Desktop\mon_application_job\afrijob_backend"
+  3. Appuyer ENTRÉE
+  4. Taper: npm start
+  5. Appuyer ENTRÉE
+
+Résultat attendu:
+  ✅ Connecté à MySQL — base: bddiane_sp
+  ✅ Serveur actif sur http://localhost:3001
+
+NE PAS FERMER CETTE FENÊTRE!
+
+Vérifier:
+  • Ouvrir Chrome
+  • Aller à: http://localhost:3001/health
+  • Résultat: {"status":"OK","message":"Serveur actif"}
+
+
+ÉTAPE 3: Démarrer Frontend (2 minutes)
+──────────────────────────────────────────────────────────────────────────
+
+Actions dans PowerShell 2 (NOUVELLE FENÊTRE):
+  1. Clic droit bureau → Open with PowerShell (à nouveau)
+  2. Taper: cd "c:\Users\SYST\Desktop\mon_application_job"
+  3. Appuyer ENTRÉE
+  4. Taper: flutter run -d chrome
+  5. Appuyer ENTRÉE
+  6. Attendre 10-15 secondes
+
+Résultat attendu:
+  Chrome s'ouvre automatiquement avec l'app AFRIJOB
+
+
+🧪 TESTER MAINTENANT
+════════════════════════════════════════════════════════════════════════════
+
+TEST 1: S'inscrire (2 min)
+──────────────────────────────────────────────────────────────────────────
+
+Dans Chrome:
+  1. Cliquer "S'inscrire"
+  2. Sélectionner "Candidat"
+  3. Remplir:
+     Email: test.candidat@gmail.com
+     Mot de passe: TestPass123
+     Confirmation: TestPass123
+     Nom: Jean Dupont
+     Téléphone: 0123456789
+     Filière: Informatique
+     Âge: 25
+     Domicile: Dakar
+     Sexe: Masculin
+  4. Cliquer "S'inscrire"
+  5. Attendre 3 secondes
+
+Résultat: ✅ "Inscription réussie!"
+
+Vérifier en BDD:
+  1. Ouvrir: http://localhost/phpmyadmin
+  2. Cliquer: bddiane_sp → utilisateurs
+  3. Chercher: test.candidat@gmail.com
+  4. Résultat: ✅ Ligne créée!
+
+
+TEST 2: Se connecter (1 min)
+──────────────────────────────────────────────────────────────────────────
+
+Dans Chrome:
+  1. Taper: test.candidat@gmail.com
+  2. Taper: TestPass123
+  3. Cliquer "Se connecter"
+  4. Attendre 2 secondes
+
+Résultat: ✅ "Bienvenue Jean Dupont!"
+
+Vérifier le token:
+  1. Appuyer F12 (Chrome DevTools)
+  2. Aller à: Application → Local Storage → http://localhost
+  3. Chercher: token
+  4. Résultat: ✅ token existe!
+
+
+TEST 3: Postuler (2 min)
+──────────────────────────────────────────────────────────────────────────
+
+Dans Chrome:
+  1. Cliquer onglet "Offres"
+  2. Attendre 2-3 secondes (chargement)
+  3. Voir les offres
+  4. Cliquer "Postuler" sur une offre
+  5. Cliquer "Postuler" (popup de confirmation)
+  6. Attendre 2 secondes
+
+Résultat: ✅ "Candidature envoyée avec succès!"
+
+Vérifier en BDD (LE PLUS IMPORTANT!):
+  1. Ouvrir: http://localhost/phpmyadmin
+  2. Cliquer: bddiane_sp → candidatures
+  3. Résultat: ✅ Ligne créée avec:
+     - candidat_id: 1
+     - offre_id: 1 (ou autre)
+     - statut: En cours
+     - date_postulation: [date actuelle]
+
+     🎉 LES DONNÉES SONT EN BDD!
+
+
+📊 VÉRIFICATION COMPLÈTE
+════════════════════════════════════════════════════════════════════════════
+
+Exécuter dans phpMyAdmin cette requête SQL:
+
+SELECT 
+    (SELECT COUNT(*) FROM utilisateurs) as 'Utilisateurs',
+    (SELECT COUNT(*) FROM candidats) as 'Candidats',
+    (SELECT COUNT(*) FROM offres) as 'Offres',
+    (SELECT COUNT(*) FROM candidatures) as 'Candidatures';
+
+Résultat attendu:
+  Utilisateurs | Candidats | Offres | Candidatures
+  1            | 1         | 2+     | 1+
+
+✅ Les compteurs augmentent = TOUT FONCTIONNE!
+
+
+✅ CHECKLIST - SI TOUT EST COCHÉ
+════════════════════════════════════════════════════════════════════════════
+
+- [✓] WAMP démarré (icône verte)
+- [✓] MySQL accessible (phpMyAdmin fonctionne)
+- [✓] bddiane_sp existe
+- [✓] Backend démarre sans erreur (npm start OK)
+- [✓] Frontend s'ouvre dans Chrome
+- [✓] S'inscrire crée des données en BDD
+- [✓] Se connecter fonctionne et sauvegarde token
+- [✓] Les offres s'affichent (chargées depuis BDD)
+- [✓] Postuler crée ligne en table candidatures
+- [✓] Pas d'erreur en Chrome F12
+- [✓] Pas d'erreur en PowerShell backend
+- [✓] Les compteurs BDD augmentent
+
+🎉 BRAVO! L'APPLICATION FONCTIONNE PARFAITEMENT!
+
+
+❌ DÉPANNAGE RAPIDE
+════════════════════════════════════════════════════════════════════════════
+
+Problème: "Cannot GET /health"
+Cause: Backend ne tourne pas
+Solution: Vérifier PowerShell 1 - "npm start" ok?
+
+Problème: "Failed to connect to server"
+Cause: Firewall ou backend pas accessible
+Solution: Vérifier backend sur http://localhost:3001
+
+Problème: "Table bddiane_sp not found"
+Cause: WAMP pas lancé ou bddiane_sp pas importée
+Solution: Redémarrer WAMP et importer la BDD
+
+Problème: "Duplicate entry"
+Cause: Vous avez déjà postulé à cette offre
+Solution: Essayer une autre offre ou créer nouveau candidat
+
+Problème: Les données ne vont pas en BDD
+Cause: Erreur MySQL ou API
+Solution: 
+  1. Vérifier logs PowerShell backend
+  2. Vérifier erreur en Chrome F12 → Console
+  3. Vérifier erreur en Chrome F12 → Network
+
+
+🛑 QUAND VOUS AVEZ FINI
+════════════════════════════════════════════════════════════════════════════
+
+Arrêter les services:
+
+PowerShell 1 (Backend):
+  1. Appuyer Ctrl+C
+  2. Taper Y et ENTRÉE
+  3. Fermer la fenêtre
+
+PowerShell 2 (Frontend):
+  1. Appuyer Ctrl+C
+  2. Taper Y et ENTRÉE
+  3. Fermer la fenêtre
+
+WAMP:
+  1. Clic droit icône WAMP
+  2. "Stop All"
+
+✅ Tout est arrêté proprement!
+
+
+📚 FICHIERS D'AIDE DISPONIBLES
+════════════════════════════════════════════════════════════════════════════
+
+Si vous voulez plus de détails:
+
+1. COMMANDES_COPIER_COLLER.md
+   → Toutes les commandes prêtes à copier/coller
+
+2. LANCER_ET_TESTER.md
+   → Guide détaillé étape par étape (15 min)
+
+3. GUIDE_VISUEL.md
+   → Captures d'écran textuelles (15 min)
+
+4. REQUETES_VERIFICATION_BDD.sql
+   → Requêtes SQL pour vérifier les données
+
+5. INDEX_FICHIERS_AIDE.md
+   → Index de tous les fichiers créés
+
+6. GUIDE_COMPLET_SAUVEGARDE_BDD.md
+   → Guide exhaustif et détaillé (20 min)
+
+Tous ces fichiers sont dans:
+  c:\Users\SYST\Desktop\mon_application_job\
+
+
+💡 RÉSUMÉ FINAL
+════════════════════════════════════════════════════════════════════════════
+
+✅ Configuration: CORRECTE
+✅ Code: CORRECT
+✅ BDD: PRÊTE
+✅ Application: PRÊTE À TESTER!
+
+Vous avez:
+  ✅ Inscrit un candidat → Données en BDD
+  ✅ Connecté le candidat → Token sauvegardé
+  ✅ Affiché les offres → Depuis la BDD
+  ✅ Posté une candidature → Données en BDD
+
+C'EST DONC UN SUCCÈS COMPLET! 🎉🚀
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              👉 COMMENCEZ PAR LE FICHIER: LANCER_ET_TESTER.md             ║
+║                  OU: COMMANDES_COPIER_COLLER.md                           ║
+║                                                                            ║
+║                    BON COURAGE ET À BIENTÔT! 🚀                            ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
