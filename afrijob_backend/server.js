@@ -10,6 +10,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Vérifier les variables d'environnement essentielles
+const requiredEnvs = ['JWT_SECRET'];
+requiredEnvs.forEach((name) => {
+  if (!process.env[name]) {
+    console.warn(`⚠️ Variable d'environnement manquante: ${name}`);
+  }
+});
+
 // ======== MIDDLEWARE ========
 app.use(cors({
   origin: true,
@@ -62,8 +70,13 @@ if (frontendStaticPath) {
 }
 
 // Test de connexion à la base de données
-const db = require('./config/database');
-console.log('✅ Base de données configurée');
+let db;
+try {
+  db = require('./config/database');
+  console.log('✅ Base de données configurée');
+} catch (err) {
+  console.error('❌ Échec import config/database — la base peut ne pas être accessible:', err && err.message ? err.message : err);
+}
 
 // ======== ROUTES ========
 const authRoutes = require('./routes/auth');
@@ -82,8 +95,44 @@ app.get('/health', cors(), (req, res) => {
   res.json({ status: 'OK', message: 'Serveur actif', timestamp: new Date().toISOString() });
 });
 
+// 404 pour les routes API non trouvées
+app.use('/api', (req, res, next) => {
+  res.status(404).json({ message: 'Route API introuvable' });
+});
+
+// Middleware de gestion des erreurs centralisé
+app.use((err, req, res, next) => {
+  console.error('Unhandled route error:', err && err.stack ? err.stack : err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ message: err.message || 'Erreur interne du serveur' });
+});
+
 // ======== DÉMARRAGE ========
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Serveur actif sur http://localhost:${PORT}`);
-  console.log(`   Base de données: ${process.env.DB_NAME}`);
+const startServer = (port) => {
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`✅ Serveur actif sur http://localhost:${port}`);
+    console.log(`   Base de données: ${process.env.DB_NAME}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`⚠️ Port ${port} occupé, tentative sur ${port + 1}`);
+      // Essayer un autre port localement
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+};
+
+startServer(Number(PORT));
+
+// Gestion des promesses non gérées et exceptions
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Rejection non gérée:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Exception non interceptée:', err && err.stack ? err.stack : err);
+  // Ne pas forcer exit immédiatement en environnement géré par Railway; laisser le service redémarrer si nécessaire.
 });
