@@ -257,7 +257,7 @@ Future<void> _handleAuth() async {
         }
       }
     } else {
-      // INSCRIPTION
+      // INSCRIPTION INTELLIGENTE - Crée le compte ou connecte si existe
       final extraData = isCandidat 
           ? {
               'nom': _nomController.text,
@@ -275,7 +275,7 @@ Future<void> _handleAuth() async {
               'adresse': 'Non spécifié'
             };
       
-      await ApiService.register(
+      final response = await ApiService.smartRegisterOrLogin(
         email: isCandidat ? _emailController.text : _emailSocieteController.text,
         password: _passController.text,
         userType: isCandidat ? 'candidat' : 'entreprise',
@@ -283,21 +283,51 @@ Future<void> _handleAuth() async {
       );
 
       if (mounted) Navigator.pop(context);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("✅ Inscription réussie ! Veuillez vous connecter"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        setState(() {
-          isLogin = true;
-        });
+
+      if (response['token'] != null) {
+        // Sauvegarder le token
+        await ApiService.saveToken(response['token']);
         
-        // Réinitialiser les champs
-        _passController.clear();
-        if (isCandidat) {
+        final user = response['user'];
+        final Map<String, String> userData = {
+          'id': user['id'].toString(),
+          'email': user['email'].toString(),
+          'userType': user['userType'].toString(),
+          'nom': user['nom']?.toString() ?? '',
+          if (user['userType'] == 'entreprise' && user['nom'] != null) 'nom_societe': user['nom'].toString(),
+          if (user['filiere'] != null) 'filiere': user['filiere'].toString(),
+          if (user['domaine'] != null) 'domaine': user['domaine'].toString(),
+          if (user['telephone'] != null) 'telephone': user['telephone'].toString(),
+          if (user['age'] != null) 'age': user['age'].toString(),
+          if (user['domicile'] != null) 'domicile': user['domicile'].toString(),
+          if (user['sexe'] != null) 'sexe': user['sexe'].toString(),
+          if (user['photo'] != null) 'photo': user['photo'].toString(),
+        };
+        
+        // Sauvegarder les données utilisateur
+        await ApiService.saveUser(userData);
+        
+        String msgType = response['isNewAccount'] ?? false ? 'Compte créé' : 'Connecté';
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ $msgType avec succès!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => isCandidat 
+                  ? CandidateDashboard(initialData: userData) 
+                  : CompanyDashboard(initialData: userData),
+            ),
+          );
+        }
+      }
+    }
           _emailController.clear();
         } else {
           _emailSocieteController.clear();

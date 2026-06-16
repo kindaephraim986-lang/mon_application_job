@@ -8,11 +8,11 @@
   },
   "env": {
     "PORT": "${{ Railway.PORT }}",
-    "DB_HOST": "mysql.railway.internal",
-    "DB_USER": "root",
-    "DB_PASSWORD": "${{ MySQL.MYSQLPASSWORD }}",
-    "DB_NAME": "${{ MySQL.MYSQLDATABASE }}",
-    "DB_PORT": "${{ MySQL.MYSQLPORT }}",
+    "DB_HOST": "${{ MySQL.MYSQL_HOST }}",
+    "DB_USER": "${{ MySQL.MYSQL_USER }}",
+    "DB_PASSWORD": "${{ MySQL.MYSQL_PASSWORD }}",
+    "DB_NAME": "${{ MySQL.MYSQL_DATABASE }}",
+    "DB_PORT": "${{ MySQL.MYSQL_PORT }}",
     "JWT_SECRET": "afrijob_super_secret_key_2024_change_this_in_production",
     "JWT_EXPIRE": "30d"
   }
