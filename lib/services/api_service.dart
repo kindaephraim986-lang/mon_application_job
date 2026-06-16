@@ -15,7 +15,14 @@ class ApiService {
       return _envApiBaseUrl;
     }
     if (kIsWeb) {
-      return 'http://localhost:3001/api';
+      // Use the current origin so the web build calls the same host by default.
+      // If your backend is hosted elsewhere, set `--dart-define=API_BASE_URL=https://api.example.com/api`
+      try {
+        final origin = Uri.base.origin;
+        return '\$origin/api';
+      } catch (_) {
+        return '/api';
+      }
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -87,6 +94,39 @@ class ApiService {
       return data;
     } else {
       throw Exception(data['message'] ?? 'Email ou mot de passe incorrect');
+    }
+  }
+
+  /// Inscription intelligente: 
+  /// - Si le compte existe → connexion automatique
+  /// - Si le compte n'existe pas → création + connexion automatique
+  static Future<Map<String, dynamic>> smartRegisterOrLogin({
+    required String email,
+    required String password,
+    required String userType,
+    Map<String, dynamic>? extraData,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/smart-register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'userType': userType,
+        ...?extraData,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    
+    if (response.statusCode == 200) {
+      if (data['token'] != null) {
+        await StorageService.saveToken(data['token']);
+        await StorageService.saveUser(data['user']);
+      }
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Erreur lors de l\'authentification');
     }
   }
 
