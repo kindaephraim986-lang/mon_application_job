@@ -5,6 +5,8 @@
 .packages
 .pub-cache/
 build/
+!afrijob_backend/build/
+!afrijob_backend/build/web/
 android/.gradle/
 android/app/debug.keystore
 ios/Flutter/Flutter.framework
@@ -27,21 +29,6 @@ logs/
 build/
 */build/
 
-# IDE
-.idea/
-.vscode/
-*.iml
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Flutter web local files
-web/manifest.json
-
-# Temporary files
-*.tmp
-*.temp
-
-# Backup nested git metadata
-.git-backup/
+# Except backend web build
+!afrijob_backend/build/
+!afrijob_backend/build/web/
