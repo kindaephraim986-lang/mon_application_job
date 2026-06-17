@@ -62,11 +62,8 @@ jobs:
           curl -sSL https://railway.app/install.sh | bash
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
-      - name: Login to Railway
-        env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
-        run: railway login --apiKey "$RAILWAY_API_KEY"
-
       - name: Deploy backend service
         working-directory: afrijob_backend
+        env:
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
         run: railway up --detach
