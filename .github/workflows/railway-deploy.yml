@@ -58,7 +58,7 @@ jobs:
           cp -R build/web afrijob_backend/build/web
 
       - name: Install Railway CLI
-        run: curl -sSL https://railway.app/install.sh | sh
+        run: curl -sSL https://railway.app/install.sh | bash
 
       - name: Login to Railway
         env:
