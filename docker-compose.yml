@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./afrijob_backend
+      dockerfile: Dockerfile
+    container_name: afrijob_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=afrijob_user
+      - DB_PASSWORD=password123
+      - DB_NAME=afrijob
+      - DB_PORT=3306
+      - JWT_SECRET=your_secret_key_here
+      - JWT_EXPIRE=30d
+    volumes:
+      - ./afrijob_backend:/app
+      - /app/node_modules
+      - ./afrijob_backend/uploads:/app/uploads
+    depends_on:
+      - db
+    networks:
+      - afrijob_network
+    command: npm run dev
+
+  db:
+    image: mysql:8.0
+    container_name: afrijob_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=afrijob
+      - MYSQL_USER=afrijob_user
+      - MYSQL_PASSWORD=password123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - afrijob_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:
+
+networks:
+  afrijob_network:
+    driver: bridge
