@@ -1,0 +1,26 @@
+{
+  "user_1781527027036": {
+    "id": "user_1781527027036",
+    "email": "ephraim@example.com",
+    "password": "$2a$10$pxbmJWzB19L83ENTLdtzyexBCh1Hxa11uKBfwfaF5rmfItJNG5HuK",
+    "userType": "candidat",
+    "profile": {
+      "nom": "KINDA Ephraim",
+      "filiere": "Développement Full-Stack"
+    }
+  },
+  "user_1781532612607": {
+    "id": "user_1781532612607",
+    "email": "bouremakote2@gmail.com",
+    "password": "$2a$10$OGRoVTcmdK71kw90qEwElOxDPrtBmy9lbZaKQ94.NiE7X0qL3qzZC",
+    "userType": "candidat",
+    "profile": {
+      "nom": "KOTE BOUREMA",
+      "filiere": "Développement Full-Stack",
+      "telephone": "+226 67774512",
+      "age": 22,
+      "domicile": "Non spécifié",
+      "sexe": "Masculin"
+    }
+  }
+}

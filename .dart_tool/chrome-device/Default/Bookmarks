@@ -1,0 +1,94 @@
+{
+   "checksum": "3c4f908d2e62a8a4c95499d8b175b615",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "children": [ {
+               "date_added": "13349783221706103",
+               "date_last_used": "0",
+               "guid": "0e0a84fd-3cbd-4b3a-8148-bbaf9bb051fc",
+               "id": "8",
+               "name": "Td Analogik 1.pdf",
+               "show_icon": false,
+               "source": "unknown",
+               "type": "url",
+               "url": "file:///C:/Users/SYST/Desktop/Cours%20U-AUBEN%202023-2024/Td%20Analogik%201.pdf",
+               "visit_count": 0
+            }, {
+               "date_added": "13349783221706323",
+               "date_last_used": "0",
+               "guid": "1d2b43c2-7d0a-4234-9263-c5a82f8668a2",
+               "id": "9",
+               "name": "TD d'algèbre linéaire U-auben.pdf",
+               "show_icon": false,
+               "source": "unknown",
+               "type": "url",
+               "url": "file:///C:/Users/SYST/Desktop/Cours%20U-AUBEN%202023-2024/TD%20d'alge%CC%80bre%20line%CC%81aire%20U-auben.pdf",
+               "visit_count": 0
+            } ],
+            "date_added": "13349783221705228",
+            "date_last_used": "0",
+            "date_modified": "13349783221706323",
+            "guid": "e630c6fc-a484-4a8e-8e3f-632ce1e96ed3",
+            "id": "7",
+            "name": " n",
+            "source": "unknown",
+            "type": "folder"
+         }, {
+            "date_added": "13411313416314346",
+            "date_last_used": "13411922972861254",
+            "guid": "636841ca-fe6b-48d4-9513-a83cf996a68e",
+            "id": "10",
+            "name": "Hadj Burkina",
+            "show_icon": false,
+            "source": "unknown",
+            "type": "url",
+            "url": "https://ehadjburkina.net/",
+            "visit_count": 8
+         } ],
+         "date_added": "13425913285284747",
+         "date_last_used": "0",
+         "date_modified": "13411313416314346",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Barre des favoris",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13425913285284747",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Autres favoris",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13425913285284747",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Favoris de l’appareil mobile",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "workspaces_v2": {
+         "children": [  ],
+         "date_added": "13426168122441940",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "75aa6670-344f-549d-b742-660f029506ab",
+         "id": "11",
+         "name": "Espaces de travail",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CkEKHgiIgQISCBbkVNWeAQAAKg4QABgBIAAoBjAAOABAABIAKhhrMEovWm1yMHpGeHhkTVBNN0k0ME1BPT1IA6AGDBKOAQgLEokBChx3UkJyWkwrNlBBOWF2S2dqTlA3SlhETGNmdnM9EiQyYmVlMzQxZi02NjQwLTUwNTQtYWE4YS02ZmI5YjA2M2U2ZWQYACAAKAAwuc7ToKYzOIXP06CmM0CFz9OgpjNKHG5teDY1c1FEdnhJOFRnRWV2K0ErbnR0b1NuND1aAGUAAAAAwj4CYAASrAEICRKnAQocMFZMckFoeXoxeFpIQmhXa3YwekdXL0o4cVVRPRIkMWQyYjQzYzItN2QwYS00MjM0LTkyNjMtYzVhODJmODY2OGEyGAAgACgAMPjBlYKIMzjvxpWCiDNA78aVgogzShxaOXEwRWxqZ0pLaDRjYklQWU9aYzF0cnZOcXM9Wh4iHERGemMyQWxPVmdaYjJ3VHVlbXhJRUdpckxhOD1ld3Bso8I+AmAAEqwBCAgSpwEKHExHQTdoNGJQeTdFSnhqd0MzNS8zRVRTWlVZST0SJDBlMGE4NGZkLTNjYmQtNGIzYS04MTQ4LWJiYWY5YmIwNTFmYxgAIAAoADD3wZWCiDM408aVgogzQNPGlYKIM0oceVRQU3ZHdFRGOTF1bTJxbmN6YWxRd3VNeHNzPVoeIhwxbFNnU05QSWcxSGs1TG0wcUdJcmlhSFBtMTQ9ZXdwbKPCPgJgABKsAQgHEqcBChxLMDJvN3VIamhNVHVlbmJRK0s3ODRYUzczQUE9EiRlNjMwYzZmYy1hNDg0LTRhOGUtOGUzZi02MzJjZTFlOTZlZDMYACAAKAAw9sGVgogzOPvFlYKIM0D7xZWCiDNKHHVMV1NmYWhKZUVKOUlKTTdRVDRPSmk4Z1dKMD1aHiIcY3RUWE9RVVdFZXJUNGFPS1MzZFdKNm13R1ZFPWUAAAAAwj4CYAASjgEIARKJAQoceXhKLzZmdmtlY3I3a3A1RVF6QjR0V0xwZGJFPRIkZGVlNDQ2MTMtZWQzZC01YjAxLTk1YjEtZTcwMDJjZjFkZWVhGAAgACgAMNP0goCHMzin94KAhzNAp/eCgIczShxhUkNXTGdoRjliNUlucUtJRHZ1Si9qdlFrRmM9WgBlAAAAAMI+AmAAEq0BCAoSqAEKHDV0N0IzOGpwZG40anppMGdPZ0hVaWdmZ3lHUT0SJDYzNjg0MWNhLWZlNmItNDhkNC05NTEzLWE4M2NmOTk2YTY4ZRgAIAAoADCp58ShuDM4wL3x/rUzQMC98f61M0ocQTdYcjhUdm9vczRnZEcrbVJNeXZMRE1yT2xnPVofIh3Yc3kwS1Z4ZHFVSjNhRVVrR21uRWFmRUFDR3VjPWXmNrvEwj4CYAASjgEIAhKJAQocWWNTVG9udkVTUHdxQ3M0TDJjclZodjY4TDk4PRIkMDlkZGM1M2UtNjMyZS01NzhkLTk3OTYtMTY0MGM5OTdlZGQyGAAgACgAMNT0goCHMzi/94KAhzNAv/eCgIczShxvUFZraHdCUmJWNjVLQ1dSMitJT05IV29PdTg9WgBlAAAAAMI+AmAAEo4BCAMSiQEKHG5qZ0R1ODhlQ3J2WHA4NnBEN2ZIR2NxRnA4OD0SJDZmYjJjZGVhLTczZDYtNTQxZC1iOWVjLWMzZDg3NzUwOTBhZhgAIAAoADDZ9IKAhzM46PeCgIczQOj3goCHM0oceXpOQjAxY241NEE3Y1JVMHVUKy9QZ21UdFVvPVoAZQAAAADCPgJgADAAOAA=",
+   "version": 1
+}

@@ -1,0 +1,39 @@
+name: job_research
+description: Application de recherche d'emploi
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI
+  cupertino_icons: ^1.0.2
+  
+  # Utilitaires
+  collection: ^1.17.2
+  
+  # Images et fichiers
+  image_picker: ^0.8.7+4
+  file_picker: ^5.2.0
+  
+  # Stockage local
+  shared_preferences: ^2.2.0
+
+  # Réseau et Web
+  http: ^1.1.0
+  webview_flutter: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/

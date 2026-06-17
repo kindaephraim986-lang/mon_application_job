@@ -1,0 +1,1 @@
+Applying shadow/border refinements to custom_widgets, auth_screen, candidate_dashboard, company_dashboard.

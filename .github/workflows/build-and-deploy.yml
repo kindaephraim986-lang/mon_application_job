@@ -1,0 +1,45 @@
+name: Build and deploy frontend
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  backend-check:
+    name: Backend dependency install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+  frontend-build-and-publish:
+    name: Build Flutter web and publish to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: backend-check
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install Flutter dependencies
+        working-directory: frontend
+        run: flutter pub get
+      - name: Build Flutter web
+        working-directory: frontend
+        run: flutter build web --release --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }}
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/build/web
+          publish_branch: gh-pages
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          allow_empty_commit: true
