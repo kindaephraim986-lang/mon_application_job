@@ -65,5 +65,5 @@ jobs:
       - name: Deploy backend service
         working-directory: afrijob_backend
         env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --detach
