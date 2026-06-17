@@ -1,3 +1,17 @@
+# Dependency directories
+node_modules/
+backend/node_modules/
+
+# Flutter/Dart build and tool files
+frontend/.dart_tool/
+.dart_tool/
+frontend/build/
+build/
+build_web_test/
+.flutter-plugins
+.packages
+.pub/
+
 flutter/ephemeral/
 backend/.env
 backend/uploads/
