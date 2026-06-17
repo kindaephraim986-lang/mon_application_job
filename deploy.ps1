@@ -1,7 +1,7 @@
 # ============================================================================
-# Script de D√©ploiement Multi-Plateforme - Mon Application Job
+# Script de DÈploiement Multi-Plateforme - Mon Application Job
 # ============================================================================
-# Ce script automatise le d√©ploiement sur les plateformes:
+# Ce script automatise le dÈploiement sur les plateformes:
 # - Ordinateur (Windows/Mac/Linux Desktop)
 # - Android
 # - iOS (Mac uniquement)
@@ -41,7 +41,7 @@ function Write-Status {
 }
 
 function Test-Prerequisites {
-    Write-Status "V√©rification des pr√©requis..." "Info"
+    Write-Status "VÈrification des prÈrequis..." "Info"
     
     $checks = @{
         "flutter" = "flutter --version"
@@ -54,15 +54,15 @@ function Test-Prerequisites {
     foreach ($tool in $checks.Keys) {
         try {
             $result = & {Invoke-Expression $checks[$tool] 2>&1 | Select-Object -First 1}
-            Write-Status "$tool ‚úì" "Success"
+            Write-Status "$tool ?" "Success"
         } catch {
-            Write-Status "$tool ‚úó (non install√©)" "Error"
+            Write-Status "$tool ? (non installÈ)" "Error"
             $allGood = $false
         }
     }
     
     if (-not $allGood) {
-        Write-Status "Certains pr√©requis manquent. Installez les outils manquants." "Error"
+        Write-Status "Certains prÈrequis manquent. Installez les outils manquants." "Error"
         exit 1
     }
 }
@@ -75,38 +75,38 @@ function Clean-Project {
     flutter pub get | Out-Null
     Pop-Location
     
-    Write-Status "Nettoyage termin√©" "Success"
+    Write-Status "Nettoyage terminÈ" "Success"
 }
 
 function Build-Backend {
-    Write-Status "üì¶ D√©marrage du Backend (Node.js)..." "Info"
+    Write-Status "?? DÈmarrage du Backend (Node.js)..." "Info"
     
     if (-not (Test-Path $backendDir)) {
-        Write-Status "Dossier backend non trouv√©" "Error"
+        Write-Status "Dossier backend non trouvÈ" "Error"
         exit 1
     }
     
     Push-Location $backendDir
     
-    # Installer d√©pendances
-    Write-Status "Installation des d√©pendances npm..." "Info"
+    # Installer dÈpendances
+    Write-Status "Installation des dÈpendances npm..." "Info"
     npm install
     
-    # V√©rifier la migration
+    # VÈrifier la migration
     if (Test-Path "scripts/run_migrations.js") {
-        Write-Status "Ex√©cution des migrations..." "Info"
+        Write-Status "ExÈcution des migrations..." "Info"
         node scripts/run_migrations.js
     }
     
-    # D√©marrer le serveur
-    Write-Status "D√©marrage du serveur sur http://0.0.0.0:3001..." "Success"
+    # DÈmarrer le serveur
+    Write-Status "DÈmarrage du serveur sur http://0.0.0.0:3001..." "Success"
     npm run dev
     
     Pop-Location
 }
 
 function Build-Desktop-Windows {
-    Write-Status "üíª Build Desktop (Windows)..." "Info"
+    Write-Status "?? Build Desktop (Windows)..." "Info"
     
     Push-Location $frontendDir
     
@@ -118,13 +118,13 @@ function Build-Desktop-Windows {
     flutter build windows --release
     
     $appPath = Join-Path $buildDir "windows\x64\runner\Release"
-    Write-Status "‚úì App compil√©e: $appPath" "Success"
+    Write-Status "? App compilÈe: $appPath" "Success"
     
     Pop-Location
 }
 
 function Build-Desktop-Mac {
-    Write-Status "üíª Build Desktop (macOS)..." "Info"
+    Write-Status "?? Build Desktop (macOS)..." "Info"
     
     Push-Location $frontendDir
     
@@ -136,13 +136,13 @@ function Build-Desktop-Mac {
     flutter build macos --release
     
     $appPath = Join-Path $buildDir "macos\Build\Products\Release\job_research.app"
-    Write-Status "‚úì App compil√©e: $appPath" "Success"
+    Write-Status "? App compilÈe: $appPath" "Success"
     
     Pop-Location
 }
 
 function Build-Desktop-Linux {
-    Write-Status "üíª Build Desktop (Linux)..." "Info"
+    Write-Status "?? Build Desktop (Linux)..." "Info"
     
     Push-Location $frontendDir
     
@@ -154,13 +154,13 @@ function Build-Desktop-Linux {
     flutter build linux --release
     
     $appPath = Join-Path $buildDir "linux\x64\release\bundle"
-    Write-Status "‚úì App compil√©e: $appPath" "Success"
+    Write-Status "? App compilÈe: $appPath" "Success"
     
     Pop-Location
 }
 
 function Build-Android-Debug {
-    Write-Status "üì± Build Android (Debug)..." "Info"
+    Write-Status "?? Build Android (Debug)..." "Info"
     
     Push-Location $frontendDir
     
@@ -169,7 +169,7 @@ function Build-Android-Debug {
     flutter build apk --debug
     
     $apkPath = Join-Path $buildDir "app\outputs\apk\debug\app-debug.apk"
-    Write-Status "‚úì APK compil√©: $apkPath" "Success"
+    Write-Status "? APK compilÈ: $apkPath" "Success"
     
     if ($Test) {
         Write-Status "Installation sur l'appareil..." "Info"
@@ -180,16 +180,16 @@ function Build-Android-Debug {
 }
 
 function Build-Android-Release {
-    Write-Status "üì± Build Android (Release)..." "Info"
+    Write-Status "?? Build Android (Release)..." "Info"
     
     Push-Location $frontendDir
     
-    # V√©rifier la cl√© de signature
+    # VÈrifier la clÈ de signature
     if (-not (Test-Path "android/app/release-key.keystore")) {
-        Write-Status "‚ö†Ô∏è Cl√© de signature non trouv√©e!" "Warn"
-        Write-Status "Cr√©ation d'une nouvelle cl√©..." "Info"
+        Write-Status "?? ClÈ de signature non trouvÈe!" "Warn"
+        Write-Status "CrÈation d'une nouvelle clÈ..." "Info"
         
-        $keyPassword = Read-Host "Entrez un mot de passe pour la cl√©"
+        $keyPassword = Read-Host "Entrez un mot de passe pour la clÈ"
         
         keytool -genkey -v -keystore android/app/release-key.keystore `
             -keyalg RSA -keysize 2048 -validity 10000 -alias upload-key `
@@ -201,7 +201,7 @@ function Build-Android-Release {
     flutter build apk --release
     
     $apkPath = Join-Path $buildDir "app\outputs\apk\release\app-release.apk"
-    Write-Status "‚úì APK Release compil√©: $apkPath" "Success"
+    Write-Status "? APK Release compilÈ: $apkPath" "Success"
     
     Pop-Location
 }
@@ -212,7 +212,7 @@ function Build-iOS-Debug {
         exit 1
     }
     
-    Write-Status "üçé Build iOS (Debug)..." "Info"
+    Write-Status "?? Build iOS (Debug)..." "Info"
     
     Push-Location $frontendDir
     
@@ -220,7 +220,7 @@ function Build-iOS-Debug {
     Write-Status "Compilation en cours..." "Info"
     flutter build ios
     
-    Write-Status "‚úì Build iOS pr√©par√© pour Xcode" "Success"
+    Write-Status "? Build iOS prÈparÈ pour Xcode" "Success"
     
     if ($Test) {
         Write-Status "Ouverture du projet dans Xcode..." "Info"
@@ -236,38 +236,38 @@ function Build-iOS-Release {
         exit 1
     }
     
-    Write-Status "üçé Build iOS (Release)..." "Info"
+    Write-Status "?? Build iOS (Release)..." "Info"
     
     Push-Location $frontendDir
     
-    # Build pour App Store
+    # Build
     Write-Status "Compilation en cours..." "Info"
     flutter build ios --release
     
-    Write-Status "‚úì Build iOS Release pr√©par√©" "Success"
+    Write-Status "? Build iOS Release prÈparÈ" "Success"
     Write-Status "Ouvrez ios/Runner.xcworkspace dans Xcode pour l'archivage" "Info"
     
     Pop-Location
 }
 
 function Build-All {
-    Write-Status "üî® D√©ploiement Multi-Plateforme COMPLET" "Info"
+    Write-Status "?? DÈploiement Multi-Plateforme COMPLET" "Info"
     
-    Write-Status "√âtape 1: Backend" "Info"
+    Write-Status "…tape 1: Backend" "Info"
     Build-Backend
     
-    Write-Status "√âtape 2: Desktop (Windows)" "Info"
+    Write-Status "…tape 2: Desktop (Windows)" "Info"
     Build-Desktop-Windows
     
-    Write-Status "√âtape 3: Android Release" "Info"
+    Write-Status "…tape 3: Android Release" "Info"
     Build-Android-Release
     
     if ($PSVersionTable.Platform -eq "Unix") {
-        Write-Status "√âtape 4: iOS Release" "Info"
+        Write-Status "…tape 4: iOS Release" "Info"
         Build-iOS-Release
     }
     
-    Write-Status "‚úÖ Tous les builds sont termin√©s!" "Success"
+    Write-Status "? Tous les builds sont terminÈs!" "Success"
 }
 
 # =============================================================================
@@ -275,18 +275,18 @@ function Build-All {
 # =============================================================================
 
 Write-Host ""
-Write-Status "üöÄ D√©ploiement Multi-Plateforme - Mon Application Job" "Info"
+Write-Status "?? DÈploiement Multi-Plateforme - Mon Application Job" "Info"
 Write-Host ""
 
-# V√©rifier les pr√©requis
+# VÈrifier les prÈrequis
 Test-Prerequisites
 
-# Nettoyer si demand√©
+# Nettoyer si demandÈ
 if ($Clean) {
     Clean-Project
 }
 
-# Ex√©cuter le build demand√©
+# ExÈcuter le build demandÈ
 switch ($Target) {
     "backend" {
         Build-Backend
@@ -318,5 +318,5 @@ switch ($Target) {
 }
 
 Write-Host ""
-Write-Status "‚úÖ D√©ploiement termin√© avec succ√®s!" "Success"
+Write-Status "? DÈploiement terminÈ avec succËs!" "Success"
 Write-Host ""

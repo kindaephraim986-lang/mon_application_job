@@ -1,0 +1,19 @@
+{
+  "build": {
+    "builder": "dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5
+  },
+  "env": {
+    "PORT": "${{ Railway.PORT }}",
+    "DB_HOST": "${{ MySQL.MYSQL_HOST }}",
+    "DB_USER": "${{ MySQL.MYSQL_USER }}",
+    "DB_PASSWORD": "${{ MySQL.MYSQL_PASSWORD }}",
+    "DB_NAME": "${{ MySQL.MYSQL_DATABASE }}",
+    "DB_PORT": "${{ MySQL.MYSQL_PORT }}",
+    "JWT_SECRET": "afrijob_super_secret_key_2024_change_this_in_production",
+    "JWT_EXPIRE": "30d"
+  }
+}

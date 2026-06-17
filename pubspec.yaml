@@ -1,0 +1,42 @@
+name: afrijob
+description: Application de recherche d'emploi
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI
+  cupertino_icons: ^1.0.2
+  
+  # Images et fichiers
+  image_picker: ^0.8.7+4
+  file_picker: ^5.2.0
+  
+  # Document validation
+  google_mlkit_text_recognition: ^0.15.1
+  google_mlkit_commons: ^0.11.1
+  pdf_text: ^0.5.0
+  archive: ^3.3.4
+  
+  # Stockage local
+  shared_preferences: ^2.2.0
+
+  # Réseau et Web
+  http: ^0.13.6
+  webview_flutter: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
