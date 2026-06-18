@@ -62,9 +62,23 @@ jobs:
           curl -sSL https://railway.app/install.sh | bash
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
+      - name: Verify Railway config
+        working-directory: afrijob_backend
+        run: |
+          pwd
+          ls -la
+          if [ -f .railwayrc.json ]; then
+            echo "Found .railwayrc.json:"
+            cat .railwayrc.json
+          fi
+          railway whoami || true
+
       - name: Deploy backend service
         working-directory: afrijob_backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: railway up --detach
+        run: |
+          railway up --detach --yes \
+            --project c21052ed-802b-474d-8e49-7ae7e5949afc \
+            --service 8a3bce3b-7eeb-4c74-8d7e-6a9ec678ea8d \
+            --environment c298232e-a5a9-43b3-8d07-e9c86543c2dd
