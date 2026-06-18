@@ -52,7 +52,7 @@ jobs:
         working-directory: afrijob_backend
 
       - name: Copy Flutter web build into backend
-        if: ${{ github.event.inputs.skip_flutter != 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_flutter != 'true' }}
         run: |
           mkdir -p afrijob_backend/build
           cp -R build/web afrijob_backend/build/web
