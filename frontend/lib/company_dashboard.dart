@@ -249,7 +249,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         _logoFileName = '';
         _selectedIndex = 2;
       });
-      NotificationService.notifyCandidate("Nouvelle offre: ${newOffre['titre']} chez ${_companyName}");
+      NotificationService.notifyCandidate("Nouvelle offre: ${newOffre['titre']} chez $_companyName");
       // Try to refresh global offers from backend to keep lists in sync
       try {
         final latest = await ApiService.getOffers();
@@ -418,7 +418,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Fichier enregistré : ${suggestedName}")),
+          SnackBar(content: Text("✅ Fichier enregistré : $suggestedName")),
         );
       }
     }
@@ -437,7 +437,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         children: [
           Material(
             color: Colors.blue[900],
-            child: Container(
+            child: SizedBox(
               width: 280,
               child: Column(
                 children: [
@@ -684,9 +684,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.orange.shade700),
           ),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
                 "Abonnement requis",
                 textAlign: TextAlign.center,
@@ -804,11 +804,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.grey.shade50,
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.warning_amber, color: Colors.orange),
-                        const SizedBox(width: 12),
-                        const Text("CV non fourni", style: TextStyle(color: Colors.grey)),
+                        Icon(Icons.warning_amber, color: Colors.orange),
+                        SizedBox(width: 12),
+                        Text("CV non fourni", style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -888,11 +888,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.grey.shade50,
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.warning_amber, color: Colors.orange),
-                        const SizedBox(width: 12),
-                        const Text("CNIB Recto non fourni", style: TextStyle(color: Colors.grey)),
+                        Icon(Icons.warning_amber, color: Colors.orange),
+                        SizedBox(width: 12),
+                        Text("CNIB Recto non fourni", style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -972,11 +972,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.grey.shade50,
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.warning_amber, color: Colors.orange),
-                        const SizedBox(width: 12),
-                        const Text("CNIB Verso non fourni", style: TextStyle(color: Colors.grey)),
+                        Icon(Icons.warning_amber, color: Colors.orange),
+                        SizedBox(width: 12),
+                        Text("CNIB Verso non fourni", style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -1546,7 +1546,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Espace Recruteur — ${_companyName} 🚀",
+                        "Espace Recruteur — $_companyName 🚀",
                         style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),

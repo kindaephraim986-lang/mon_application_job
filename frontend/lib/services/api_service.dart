@@ -308,7 +308,7 @@ class ApiService {
       if (lieu != null) params.add('lieu=${Uri.encodeComponent(lieu)}');
       if (field != null) params.add('field=${Uri.encodeComponent(field)}');
       
-      if (params.isNotEmpty) url += '?' + params.join('&');
+      if (params.isNotEmpty) url += '?${params.join('&')}';
 
       final response = await _httpGet(url);
 

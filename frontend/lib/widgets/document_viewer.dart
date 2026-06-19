@@ -1,7 +1,5 @@
-/**
- * lib/widgets/document_viewer.dart
- * Lecteur de documents (PDF, images) avec téléchargement
- */
+/// lib/widgets/document_viewer.dart
+/// Lecteur de documents (PDF, images) avec téléchargement
 
 import 'package:flutter/material.dart';
 import '../services/document_service.dart';

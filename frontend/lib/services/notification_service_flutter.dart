@@ -1,7 +1,5 @@
-/**
- * lib/services/notification_service_flutter.dart
- * Service pour gérer les notifications côté client
- */
+/// lib/services/notification_service_flutter.dart
+/// Service pour gérer les notifications côté client
 
 import 'package:flutter/material.dart';
 import 'api_service.dart';

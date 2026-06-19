@@ -1,4 +1,4 @@
-# 🚀 Script de déploiement pour Windows (PowerShell)
+﻿# 🚀 Script de déploiement pour Windows (PowerShell)
 # Utilisation: .\deploy.ps1 -Environment dev
 
 param(
@@ -12,7 +12,14 @@ param(
 )
 
 # Configuration
-$ProjectRoot = Split-Path -Parent $MyInvocation.MyCommandPath
+$ProjectRoot = if ($PSScriptRoot) {
+    $PSScriptRoot
+} elseif ($MyInvocation.MyCommandPath) {
+    Split-Path -Parent $MyInvocation.MyCommandPath
+} else {
+    Get-Location
+}
+
 $BackendDir = Join-Path $ProjectRoot "backend"
 $FrontendDir = Join-Path $ProjectRoot "frontend"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"

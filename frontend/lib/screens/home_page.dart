@@ -88,11 +88,11 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         elevation: 1,
         backgroundColor: Colors.white,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.facebook, color: Color(0xFF1877F2)),
-            const SizedBox(width: 8),
-            const Text('AfriBook', style: TextStyle(color: Colors.black)),
+            Icon(Icons.facebook, color: Color(0xFF1877F2)),
+            SizedBox(width: 8),
+            Text('AfriBook', style: TextStyle(color: Colors.black)),
           ],
         ),
         actions: [
@@ -114,7 +114,7 @@ class HomePage extends StatelessWidget {
                   children: [
                     CircleAvatar(backgroundColor: Colors.grey.shade300, child: const Text('E')),
                     const SizedBox(width: 10),
-                    Expanded(
+                    const Expanded(
                       child: TextField(
                         decoration: InputDecoration.collapsed(hintText: "Quoi de neuf ?"),
                       ),

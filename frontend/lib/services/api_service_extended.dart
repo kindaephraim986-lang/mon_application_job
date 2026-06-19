@@ -1,7 +1,5 @@
-/**
- * lib/services/api_service_extended.dart
- * Extension du ApiService avec les nouvelles méthodes (photos, notifications, documents)
- */
+/// lib/services/api_service_extended.dart
+/// Extension du ApiService avec les nouvelles méthodes (photos, notifications, documents)
 
 import 'package:http/http.dart' as http;
 import 'dart:convert';

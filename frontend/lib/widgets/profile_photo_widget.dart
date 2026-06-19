@@ -1,7 +1,5 @@
-/**
- * lib/widgets/profile_photo_widget.dart
- * Widget pour afficher et gérer la photo de profil
- */
+/// lib/widgets/profile_photo_widget.dart
+/// Widget pour afficher et gérer la photo de profil
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -158,7 +156,7 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

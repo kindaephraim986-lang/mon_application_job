@@ -209,10 +209,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     final header = bytes.sublist(0, 8);
     final jpgHeader = [0xFF, 0xD8, 0xFF];
     final pngHeader = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-    if (header.length >= jpgHeader.length && ListEquality().equals(header.sublist(0, jpgHeader.length), jpgHeader)) {
+    if (header.length >= jpgHeader.length && const ListEquality().equals(header.sublist(0, jpgHeader.length), jpgHeader)) {
       return true;
     }
-    return ListEquality().equals(header, pngHeader);
+    return const ListEquality().equals(header, pngHeader);
   }
 
   bool _isValidCNIBImage(Uint8List bytes) {
@@ -236,11 +236,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     }
     if (lowerExt == 'docx') {
       final zipHeader = [0x50, 0x4B, 0x03, 0x04];
-      return bytes.lengthInBytes >= 4 && ListEquality().equals(bytes.sublist(0, 4), zipHeader);
+      return bytes.lengthInBytes >= 4 && const ListEquality().equals(bytes.sublist(0, 4), zipHeader);
     }
     if (lowerExt == 'doc') {
       final oleHeader = [0xD0, 0xCF, 0x11, 0xE0];
-      return bytes.lengthInBytes >= 4 && ListEquality().equals(bytes.sublist(0, 4), oleHeader);
+      return bytes.lengthInBytes >= 4 && const ListEquality().equals(bytes.sublist(0, 4), oleHeader);
     }
     return false;
   }
@@ -532,7 +532,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       SnackBar(content: Text("Candidature envoyée pour ${nouvelle.offreTitre}"), backgroundColor: Colors.green),
     );
     NotificationService.notifyCompany(
-      "Nouvelle candidature de ${_candidateNom} pour l'offre ${nouvelle.offreTitre}",
+      "Nouvelle candidature de $_candidateNom pour l'offre ${nouvelle.offreTitre}",
     );
     setState(() {});
     _refreshCounts();
@@ -571,7 +571,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         children: [
           Material(
             color: Colors.blue[900],
-            child: Container(
+            child: SizedBox(
               width: 280,
               child: Column(
                 children: [
@@ -620,7 +620,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.12),
+                                color: Colors.black.withValues(alpha: 0.12),
                                 blurRadius: 14,
                                 offset: const Offset(0, 6),
                                 spreadRadius: 0,
@@ -999,7 +999,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: statutColor.withOpacity(0.1),
+                                    color: statutColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -1041,7 +1041,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2), spreadRadius: 0)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2), spreadRadius: 0)],
         ),
         child: Column(
           children: [
@@ -1130,7 +1130,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                         onPressed: _hasMonthlyPass && _candidateEmail.isNotEmpty
                             ? () async {
                                 await ChatService.getOrCreateConversationForCandidate(_candidateEmail, o['entreprise']?.toString() ?? '');
-                                NotificationService.notifyCompany("Le candidat ${_candidateNom} a initié un chat avec vous.");
+                                NotificationService.notifyCompany("Le candidat $_candidateNom a initié un chat avec vous.");
                                 setState(() => _selectedIndex = 5);
                               }
                             : null,

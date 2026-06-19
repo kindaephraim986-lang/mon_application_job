@@ -1,7 +1,5 @@
-/**
- * lib/widgets/notifications_center.dart
- * Centre de notifications avec badge et liste
- */
+/// lib/widgets/notifications_center.dart
+/// Centre de notifications avec badge et liste
 
 import 'package:flutter/material.dart';
 import '../services/notification_service_flutter.dart';
@@ -190,7 +188,7 @@ class NotificationTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),

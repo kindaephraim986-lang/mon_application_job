@@ -1,7 +1,5 @@
-/**
- * lib/services/document_service.dart
- * Service pour gérer l'accès aux documents (CV, CNIB) avec URLs signées
- */
+/// lib/services/document_service.dart
+/// Service pour gérer l'accès aux documents (CV, CNIB) avec URLs signées
 
 // import 'dart:typed_data';
 import 'dart:html' as html;

@@ -135,12 +135,12 @@ class ChatService {
 
   /// Créer ou obtenir une conversation pour candidat
   static Future<String> getOrCreateConversationForCandidate(String email, String companyName) async {
-    return 'conv_${email}_${companyName}';
+    return 'conv_${email}_$companyName';
   }
 
   /// Créer ou obtenir une conversation pour entreprise
   static Future<String> getOrCreateConversationForCompany(String companyName, String candidateName) async {
-    return 'conv_${companyName}_${candidateName}';
+    return 'conv_${companyName}_$candidateName';
   }
 
   /// Envoyer un message depuis candidat

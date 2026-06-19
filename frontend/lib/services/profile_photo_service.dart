@@ -1,10 +1,8 @@
-/**
- * lib/services/profile_photo_service.dart
- * Service pour gérer les photos de profil
- */
+/// lib/services/profile_photo_service.dart
+/// Service pour gérer les photos de profil
 
 import 'dart:typed_data';
-import 'api_service.dart';
+import 'api_service_extended.dart';
 
 class ProfilePhotoService {
   static final ProfilePhotoService _instance = ProfilePhotoService._internal();
@@ -20,7 +18,7 @@ class ProfilePhotoService {
   /// @return Map avec success, photoUrl, cacheBuster, etc.
   static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) async {
     try {
-      final response = await ApiService.uploadProfilePhoto(imageBytes);
+      final response = await ApiServiceExtended.uploadProfilePhoto(imageBytes);
 
       if (response['success'] == true) {
         return {
@@ -48,7 +46,7 @@ class ProfilePhotoService {
   /// @return La photo avec URL et cache buster
   static Future<Map<String, dynamic>> getCurrentPhoto() async {
     try {
-      final response = await ApiService.getCurrentProfilePhoto();
+      final response = await ApiServiceExtended.getCurrentProfilePhoto();
 
       if (response['success'] == true) {
         return {
@@ -74,7 +72,7 @@ class ProfilePhotoService {
   /// Récupérer l'historique des photos
   static Future<List<Map<String, dynamic>>> getPhotoHistory({int limit = 10}) async {
     try {
-      final response = await ApiService.getPhotoHistory(limit);
+      final response = await ApiServiceExtended.getPhotoHistory(limit);
 
       if (response['success'] == true && response['photos'] != null) {
         List<Map<String, dynamic>> photos = List<Map<String, dynamic>>.from(
@@ -98,7 +96,7 @@ class ProfilePhotoService {
   /// Supprimer une photo du profil
   static Future<bool> deletePhoto(int photoId) async {
     try {
-      final response = await ApiService.deleteProfilePhoto(photoId);
+      final response = await ApiServiceExtended.deleteProfilePhoto(photoId);
       return response['success'] == true;
     } catch (error) {
       print('Erreur deletePhoto: $error');
@@ -118,3 +116,8 @@ class ProfilePhotoService {
     return '$baseUrl${separator}t=$timestamp&cb=${DateTime.now().hashCode}';
   }
 }
+
+
+
+
+ 
