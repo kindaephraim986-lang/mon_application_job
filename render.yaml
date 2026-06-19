@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: afrijob
+    env: docker
+    dockerfilePath: Dockerfile
+    branch: main
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: CORS_ORIGIN
+        value: "https://your-app.onrender.com"
+      - key: FRONTEND_URL
+        value: "https://your-app.onrender.com"
+      - key: DB_HOST
+        value: "your-mysql-host"
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        value: "your-mysql-user"
+      - key: DB_PASSWORD
+        value: "your-mysql-password"
+      - key: DB_NAME
+        value: "bddiane_sp"
+      - key: JWT_SECRET
+        value: "your-jwt-secret"
+      - key: FILE_SIGNATURE_SECRET
+        value: "your-file-signature-secret"
