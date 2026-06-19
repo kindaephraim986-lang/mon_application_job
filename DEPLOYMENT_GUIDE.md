@@ -479,6 +479,36 @@ flutter build web --release
 }
 ```
 
+### 📍 Déployer sur Render
+
+Render peut déployer ce projet en une seule application Docker en utilisant le `Dockerfile` à la racine du dépôt.
+
+1. Créez un compte Render: https://render.com
+2. Connectez Render à votre repo GitHub et importez `mon_application_job`.
+3. Render détectera automatiquement le fichier `render.yaml` à la racine.
+4. Ajoutez ces variables d'environnement dans le service Render:
+
+```
+NODE_ENV=production
+PORT=3000
+CORS_ORIGIN=https://your-app.onrender.com
+FRONTEND_URL=https://your-app.onrender.com
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_USER=your-mysql-user
+DB_PASSWORD=your-mysql-password
+DB_NAME=bddiane_sp
+JWT_SECRET=your-jwt-secret
+FILE_SIGNATURE_SECRET=your-file-signature-secret
+```
+
+5. Render ne fournit pas de base MySQL directement pour ce dépôt. Vous devez utiliser une base MySQL externe ou un service compatible et mettre à jour `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, et `DB_NAME`.
+
+> Si `DB_HOST` est laissé sur `localhost` ou `127.0.0.1`, l'application Render essaiera de se connecter à une base dans le même conteneur, ce qui provoque l’erreur `ECONNREFUSED`.
+6. Déclenchez un deploy. Render va construire le backend et le frontend Flutter ensemble, puis exposer l'application sur le port `3000`.
+
+> Note: Le projet sert désormais le build Flutter web depuis Express via `/app/public`.
+
 #### 3. Déployer sur Vercel
 
 ```bash

@@ -76,6 +76,16 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/ocr', ocrRoutes);
 app.use('/api/health', healthRoutes);
 
+// Serve the Flutter web build if it is present in /app/public
+const frontendPath = path.join(__dirname, 'public');
+app.use(express.static(frontendPath));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 app.use((req, res) => {
   res.status(404).json({ message: 'Route introuvable' });
 });

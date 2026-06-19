@@ -22,7 +22,8 @@ class AppConfig {
     }
 
     if (kIsWeb) {
-      return 'http://localhost:3001/api';
+      final origin = Uri.base.origin;
+      return '$origin/api';
     }
 
     switch (defaultTargetPlatform) {

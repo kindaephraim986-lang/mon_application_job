@@ -69,6 +69,36 @@ git status
 3. Se connecter avec **GitHub** (important!)
 4. Autoriser Railway à accéder à GitHub
 
+### B1 bis. Alternative : déployer sur Render
+
+Render peut construire et déployer ce dépôt avec le `Dockerfile` à la racine et le fichier `render.yaml`.
+
+1. Aller à https://render.com
+2. Cliquer "Start Free"
+3. Se connecter avec GitHub
+4. Importer le repo `mon_application_job`
+5. Ajouter les variables d'environnement suivantes:
+
+```
+NODE_ENV=production
+PORT=3000
+CORS_ORIGIN=https://your-app.onrender.com
+FRONTEND_URL=https://your-app.onrender.com
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_USER=your-mysql-user
+DB_PASSWORD=your-mysql-password
+DB_NAME=bddiane_sp
+JWT_SECRET=your-jwt-secret
+FILE_SIGNATURE_SECRET=your-file-signature-secret
+```
+
+6. Render ne crée pas de base MySQL automatiquement pour ce dépôt. Utilisez un service MySQL externe ou un hôte compatible.
+
+7. Déployer le service Render.
+
+> Render va construire le backend Node.js et le frontend Flutter web ensemble dans un seul service.
+
 ### B2. Créer un nouveau projet
 
 1. Dans Railway dashboard, cliquer "New Project"
