@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../utils/logger.dart';
+import 'api_service_extended.dart';
 
 // Top-level helper functions to log requests/responses when AppConfig.logApiRequests is true
 Future<http.Response> _httpGet(String url, {Map<String, String>? headers}) async {
@@ -793,6 +794,35 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+
+  // Wrappers for extended API methods (defined in api_service_extended.dart)
+  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) => ApiServiceExtended.uploadProfilePhoto(imageBytes);
+
+  static Future<Map<String, dynamic>> getCurrentProfilePhoto() => ApiServiceExtended.getCurrentProfilePhoto();
+
+  static Future<Map<String, dynamic>> getPhotoHistory(int limit) => ApiServiceExtended.getPhotoHistory(limit);
+
+  static Future<Map<String, dynamic>> deleteProfilePhoto(int photoId) => ApiServiceExtended.deleteProfilePhoto(photoId);
+
+  static Future<Map<String, dynamic>> getUnreadNotifications(int limit) => ApiServiceExtended.getUnreadNotifications(limit);
+
+  static Future<Map<String, dynamic>> getAllNotifications(int limit, int offset) => ApiServiceExtended.getAllNotifications(limit, offset);
+
+  static Future<Map<String, dynamic>> getUnreadCount() => ApiServiceExtended.getUnreadCount();
+
+  static Future<Map<String, dynamic>> markNotificationAsRead(int notificationId) => ApiServiceExtended.markNotificationAsRead(notificationId);
+
+  static Future<Map<String, dynamic>> markAllNotificationsAsRead() => ApiServiceExtended.markAllNotificationsAsRead();
+
+  static Future<Map<String, dynamic>> deleteNotification(int notificationId) => ApiServiceExtended.deleteNotification(notificationId);
+
+  static Future<Map<String, dynamic>> deleteReadNotifications() => ApiServiceExtended.deleteReadNotifications();
+
+  static Future<Map<String, dynamic>> generateSignedUrl({required int documentId, required String documentType, required int candidatId}) => ApiServiceExtended.generateSignedUrl(documentId: documentId, documentType: documentType, candidatId: candidatId);
+
+  static Future<Map<String, dynamic>> getDocumentInfo(String token) => ApiServiceExtended.getDocumentInfo(token);
+
+  static Future<Map<String, dynamic>> getDocumentAccessLogs(int candidatId) => ApiServiceExtended.getDocumentAccessLogs(candidatId);
 }
 
 

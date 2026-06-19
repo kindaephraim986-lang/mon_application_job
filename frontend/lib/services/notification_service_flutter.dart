@@ -3,6 +3,7 @@
  * Service pour gérer les notifications côté client
  */
 
+import 'package:flutter/material.dart';
 import 'api_service.dart';
 
 class NotificationServiceFlutter {
@@ -247,5 +248,4 @@ class NotificationServiceFlutter {
   }
 }
 
-// Import pour les icônes
-import 'package:flutter/material.dart';
+// (imports en tête de fichier)

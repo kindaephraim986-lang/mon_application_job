@@ -5,7 +5,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import '../services/profile_photo_service.dart';
 
 class ProfilePhotoWidget extends StatefulWidget {
@@ -28,7 +27,6 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
   late Future<Map<String, dynamic>> _photoFuture;
   bool _isUploading = false;
   String? _photoUrl;
-  String? _cacheBuster;
 
   @override
   void initState() {
@@ -58,11 +56,10 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
       if (mounted) {
         setState(() => _isUploading = false);
 
-        if (result['success'] == true) {
+            if (result['success'] == true) {
           // Mettre à jour l'URL et cache buster
           setState(() {
             _photoUrl = result['photoUrl'];
-            _cacheBuster = result['cacheBuster'];
           });
 
           // Recharger la photo

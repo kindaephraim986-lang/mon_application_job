@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
-extension ApiServiceExtended on ApiService {
+class ApiServiceExtended {
   static String get baseUrl => AppConfig.baseUrl;
 
   // ===================== PHOTOS DE PROFIL =====================
@@ -472,12 +472,4 @@ extension ApiServiceExtended on ApiService {
   }
 
   // ===================== HELPER METHODS =====================
-
-  static Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-  }
 }
-
-// Important: Importer depuis le fichier principal
-// import 'api_service.dart';

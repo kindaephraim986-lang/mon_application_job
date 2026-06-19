@@ -4,8 +4,6 @@
  */
 
 import 'dart:typed_data';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
 
 class ProfilePhotoService {

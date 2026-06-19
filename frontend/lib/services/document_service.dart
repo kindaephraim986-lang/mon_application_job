@@ -3,7 +3,7 @@
  * Service pour gérer l'accès aux documents (CV, CNIB) avec URLs signées
  */
 
-import 'dart:typed_data';
+// import 'dart:typed_data';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'api_service.dart';
@@ -103,7 +103,6 @@ class DocumentService {
   static Future<Map<String, dynamic>> getDocumentInfo(String signedUrl) async {
     try {
       // Extraire le token de l'URL signée
-      final uri = Uri.parse(signedUrl);
       final token = signedUrl.split('/').last;
 
       final response = await ApiService.getDocumentInfo(token);

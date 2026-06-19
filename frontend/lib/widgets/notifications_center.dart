@@ -102,7 +102,6 @@ class _NotificationsCenterState extends State<NotificationsCenter> {
 
           final data = snapshot.data!;
           final notifications = data['notifications'] as List<Map<String, dynamic>>? ?? [];
-          final unreadCount = data['unread'] as int? ?? 0;
 
           if (notifications.isEmpty) {
             return Center(
