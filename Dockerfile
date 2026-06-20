@@ -5,7 +5,8 @@ COPY backend/package*.json ./
 RUN npm install --production
 COPY backend/ .
 
-FROM cirrusci/flutter:3.44.2 AS frontend-builder
+# Use a valid Flutter Docker image tag that still exists
+FROM cirrusci/flutter:stable-web AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/pubspec*.yaml ./
