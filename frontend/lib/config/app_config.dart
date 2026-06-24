@@ -5,7 +5,10 @@ class AppConfig {
   // ==================== ENVIRONNEMENT ====================
   
   /// L'environnement actuel (development, production)
-  static const String environment = 'development';
+  static const String environment = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: bool.fromEnvironment('dart.vm.product') ? 'production' : 'development',
+  );
 
   /// URL API personnalisée via --dart-define=API_BASE_URL
   static const String _customBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
@@ -60,8 +63,8 @@ class AppConfig {
   /// Durée de vie du token (en minutes)
   static const int tokenExpirationMinutes = 30 * 24 * 60; // 30 jours
   
-  /// Activer la validation SSL en production
-  static const bool validateSSL = false; // À passer à true en production
+  /// Activer la validation SSL selon l'environnement
+  static bool get validateSSL => isProduction;
   
   // ==================== LOGGING ====================
   
@@ -143,7 +146,7 @@ class AppConfig {
 enum PlatformType {
   windows,
   web,
-  android_emulator,
+  androidEmulator,
   androidDevice,
   ios,
   macos,

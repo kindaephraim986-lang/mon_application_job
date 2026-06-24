@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import '../utils/logger.dart';
 
 class NotificationServiceFlutter {
   static final NotificationServiceFlutter _instance = NotificationServiceFlutter._internal();
@@ -46,8 +47,8 @@ class NotificationServiceFlutter {
       }
 
       return {'success': false, 'notifications': [], 'unreadCount': 0};
-    } catch (error) {
-      print('Erreur getUnreadNotifications: $error');
+    } catch (error, st) {
+      Logger.error('Erreur getUnreadNotifications', error, st);
       return {'success': false, 'notifications': [], 'unreadCount': 0};
     }
   }
@@ -98,8 +99,8 @@ class NotificationServiceFlutter {
         'unread': 0,
         'hasMore': false
       };
-    } catch (error) {
-      print('Erreur getAllNotifications: $error');
+    } catch (error, st) {
+      Logger.error('Erreur getAllNotifications', error, st);
       return {
         'success': false,
         'notifications': [],
@@ -121,8 +122,8 @@ class NotificationServiceFlutter {
       }
 
       return 0;
-    } catch (error) {
-      print('Erreur getUnreadCount: $error');
+    } catch (error, st) {
+      Logger.error('Erreur getUnreadCount', error, st);
       return 0;
     }
   }
@@ -134,8 +135,8 @@ class NotificationServiceFlutter {
     try {
       final response = await ApiService.markNotificationAsRead(notificationId);
       return response['success'] == true;
-    } catch (error) {
-      print('Erreur markAsRead: $error');
+    } catch (error, st) {
+      Logger.error('Erreur markAsRead', error, st);
       return false;
     }
   }
@@ -151,8 +152,8 @@ class NotificationServiceFlutter {
       }
 
       return 0;
-    } catch (error) {
-      print('Erreur markAllAsRead: $error');
+    } catch (error, st) {
+      Logger.error('Erreur markAllAsRead', error, st);
       return 0;
     }
   }
@@ -164,8 +165,8 @@ class NotificationServiceFlutter {
     try {
       final response = await ApiService.deleteNotification(notificationId);
       return response['success'] == true;
-    } catch (error) {
-      print('Erreur deleteNotification: $error');
+    } catch (error, st) {
+      Logger.error('Erreur deleteNotification', error, st);
       return false;
     }
   }
@@ -181,8 +182,8 @@ class NotificationServiceFlutter {
       }
 
       return 0;
-    } catch (error) {
-      print('Erreur deleteReadNotifications: $error');
+    } catch (error, st) {
+      Logger.error('Erreur deleteReadNotifications', error, st);
       return 0;
     }
   }

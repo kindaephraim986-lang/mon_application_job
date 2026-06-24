@@ -213,12 +213,13 @@ class PaymentService {
                                 }
                               }
                               
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                              final dialogContext = context;
+                              if (dialogContext.mounted) {
+                                ScaffoldMessenger.of(dialogContext).showSnackBar(
                                   SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
                                 );
+                                Navigator.pop(dialogContext, true);
                               }
-                              Navigator.pop(context, true);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Code OTP incorrect"), backgroundColor: Colors.red),
@@ -244,12 +245,14 @@ class PaymentService {
 
   // Paiement entreprise
   static Future<bool> payCompanyMonthly(BuildContext context, String companyEmail) async {
+    final localContext = context;
     // CORRECTION : Utiliser companyMonthlyAmount au lieu de 'amount'
-    final method = await selectPaymentMethod(context, companyMonthlyAmount);
+    final method = await selectPaymentMethod(localContext, companyMonthlyAmount);
+    if (!localContext.mounted) return false;
     if (method == null) return false;
     
     return simulatePayment(
-      context: context,
+      context: localContext,
       amount: companyMonthlyAmount,
       reason: 'Abonnement entreprise - 30 jours',
       userEmail: companyEmail,
@@ -262,12 +265,14 @@ class PaymentService {
 
   // Paiement candidat forfait mensuel
   static Future<bool> payCandidateMonthly(BuildContext context, String candidateEmail) async {
+    final localContext = context;
     // CORRECTION : Utiliser candidateMonthlyAmount au lieu de 'amount'
-    final method = await selectPaymentMethod(context, candidateMonthlyAmount);
+    final method = await selectPaymentMethod(localContext, candidateMonthlyAmount);
+    if (!localContext.mounted) return false;
     if (method == null) return false;
     
     return simulatePayment(
-      context: context,
+      context: localContext,
       amount: candidateMonthlyAmount,
       reason: 'Forfait candidature illimitée - 30 jours',
       userEmail: candidateEmail,
@@ -280,12 +285,14 @@ class PaymentService {
 
   // Paiement candidat à l'unité
   static Future<bool> payCandidatePerApplication(BuildContext context, String candidateEmail, String offreTitre) async {
+    final localContext = context;
     // CORRECTION : Utiliser candidatePerApplicationAmount au lieu de 'amount'
-    final method = await selectPaymentMethod(context, candidatePerApplicationAmount);
+    final method = await selectPaymentMethod(localContext, candidatePerApplicationAmount);
+    if (!localContext.mounted) return false;
     if (method == null) return false;
     
     return simulatePayment(
-      context: context,
+      context: localContext,
       amount: candidatePerApplicationAmount,
       reason: 'Candidature: $offreTitre',
       userEmail: candidateEmail,

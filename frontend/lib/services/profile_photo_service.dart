@@ -3,6 +3,7 @@
 
 import 'dart:typed_data';
 import 'api_service_extended.dart';
+import '../utils/logger.dart';
 
 class ProfilePhotoService {
   static final ProfilePhotoService _instance = ProfilePhotoService._internal();
@@ -87,8 +88,8 @@ class ProfilePhotoService {
       }
 
       return [];
-    } catch (error) {
-      print('Erreur getPhotoHistory: $error');
+    } catch (error, st) {
+      Logger.error('Erreur getPhotoHistory', error, st);
       return [];
     }
   }
@@ -98,8 +99,8 @@ class ProfilePhotoService {
     try {
       final response = await ApiServiceExtended.deleteProfilePhoto(photoId);
       return response['success'] == true;
-    } catch (error) {
-      print('Erreur deletePhoto: $error');
+    } catch (error, st) {
+      Logger.error('Erreur deletePhoto', error, st);
       return false;
     }
   }

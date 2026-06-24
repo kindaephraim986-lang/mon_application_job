@@ -1,10 +1,9 @@
 /// lib/services/document_service.dart
 /// Service pour gérer l'accès aux documents (CV, CNIB) avec URLs signées
 
-// import 'dart:typed_data';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'document_service_stub.dart' if (dart.library.html) 'document_service_web.dart' as web_impl;
 
 class DocumentService {
   static final DocumentService _instance = DocumentService._internal();
@@ -69,31 +68,16 @@ class DocumentService {
     required String signedUrl,
     required String filename
   }) async {
-    try {
-      final downloadUrl = '$signedUrl?download=true';
-
-      // Créer un lien et déclencher le téléchargement
-      html.AnchorElement(href: downloadUrl)
-        ..setAttribute('download', filename)
-        ..click();
-
-      return true;
-    } catch (error) {
-      print('Erreur downloadDocument: $error');
-      return false;
-    }
+    return await web_impl.downloadDocument(
+      signedUrl: signedUrl,
+      filename: filename,
+    );
   }
 
   /// Ouvrir un document dans le navigateur (affichage inline)
   /// @param signedUrl - URL signée du document
   static Future<bool> openDocumentInBrowser(String signedUrl) async {
-    try {
-      html.window.open(signedUrl, '_blank');
-      return true;
-    } catch (error) {
-      print('Erreur openDocumentInBrowser: $error');
-      return false;
-    }
+    return await web_impl.openDocumentInBrowser(signedUrl);
   }
 
   /// Obtenir les infos du document

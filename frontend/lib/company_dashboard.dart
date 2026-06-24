@@ -65,19 +65,23 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       _subscriptionActive = active;
     });
     if (!active) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("⚠️ Vous n'avez pas d'abonnement actif"),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("⚠️ Vous n'avez pas d'abonnement actif"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } else if (remainingDays > 0 && remainingDays <= 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("⚠️ Votre abonnement expire dans $remainingDays jours"),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("⚠️ Votre abonnement expire dans $remainingDays jours"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -147,12 +151,14 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       return;
     }
 
+    final localContext = context;
     final tempDir = await Directory.systemTemp.createTemp('cv_preview_');
     final file = File('${tempDir.path}/$fileName');
     await file.writeAsBytes(cvBytes);
 
+    if (!localContext.mounted) return;
     showDialog(
-      context: context,
+      context: localContext,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.all(16),
         child: SizedBox(
@@ -196,16 +202,20 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
 
     final email = entrepriseData['email'] ?? '';
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email d'entreprise introuvable")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Email d'entreprise introuvable")),
+        );
+      }
       return;
     }
     final isActive = await SubscriptionService.isCompanySubscriptionActive(email);
     if (!isActive) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vous devez souscrire un abonnement pour publier une offre.")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Vous devez souscrire un abonnement pour publier une offre.")),
+        );
+      }
       return;
     }
 
@@ -269,7 +279,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         CandidatureService().offresGlobales.clear();
         CandidatureService().offresGlobales.addAll(mapped);
       } catch (_) {}
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offre publiée')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offre publiée')));
+      }
     } else {
       // fallback: add locally and show warning
       final newOffre = {
@@ -317,7 +329,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         CandidatureService().offresGlobales.clear();
         CandidatureService().offresGlobales.addAll(mapped);
       } catch (_) {}
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offre ajoutée localement (${resp['message'] ?? 'erreur backend'})')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offre ajoutée localement (${resp['message'] ?? 'erreur backend'})')));
+      }
     }
   }
 
@@ -335,9 +349,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                 CandidatureService().offresGlobales.removeWhere((o) => o['id'] == id);
               });
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Offre supprimée avec succès")),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Offre supprimée avec succès")),
+                );
+              }
             },
             child: const Text("Supprimer", style: TextStyle(color: Colors.red)),
           ),
@@ -350,9 +366,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     CandidatureService().updateStatut(candidatureId, nouveauStatut);
     NotificationService.notifyCandidate("Votre candidature pour l'offre $offreTitre a été $nouveauStatut");
     setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Candidature $nouveauStatut")),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Candidature $nouveauStatut")),
+      );
+    }
   }
 
   // ================== NOUVEAU : Contacter le candidat ==================
@@ -423,9 +441,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       }
     }
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("❌ Erreur : $e"), backgroundColor: Colors.red),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Erreur : $e"), backgroundColor: Colors.red),
+      );
+    }
   }
 }
 
@@ -1477,11 +1497,12 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                       )
                     : const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () async {
+                  final localContext = context;
                   await ChatService.markAsReadForCompany(conv.id);
                   await _refreshCounts();
-                  if (!mounted) return;
+                  if (!localContext.mounted) return;
                   Navigator.push(
-                    context,
+                    localContext,
                     MaterialPageRoute(
                       builder: (context) => CompanyChatScreen(
                         conversationId: conv.id,

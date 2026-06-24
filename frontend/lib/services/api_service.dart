@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,6 +33,26 @@ Future<http.Response> _httpPut(String url, {Map<String, String>? headers, dynami
   final resp = await http.put(Uri.parse(url), headers: h, body: encodedBody);
   Logger.apiResponse(resp.statusCode, resp.body);
   return resp;
+}
+
+MediaType _contentTypeFromFilename(String fileName) {
+  final name = fileName.toLowerCase();
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) {
+    return MediaType('image', 'jpeg');
+  }
+  if (name.endsWith('.png')) {
+    return MediaType('image', 'png');
+  }
+  if (name.endsWith('.pdf')) {
+    return MediaType('application', 'pdf');
+  }
+  if (name.endsWith('.docx')) {
+    return MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
+  }
+  if (name.endsWith('.doc')) {
+    return MediaType('application', 'msword');
+  }
+  return MediaType('application', 'octet-stream');
 }
 
 class ApiService {
@@ -262,7 +283,12 @@ class ApiService {
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: fileName,
+        contentType: _contentTypeFromFilename(fileName),
+      ));
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
@@ -732,7 +758,7 @@ class ApiService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
-      if (AppConfig.logApiRequests) print('[API] MULTIPART POST $baseUrl/upload file: $filePath');
+      if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $filePath');
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
       request.headers['Authorization'] = 'Bearer $token';
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
@@ -758,10 +784,15 @@ class ApiService {
       final token = await _getToken();
       if (token == null) return {'success': false, 'message': 'Non authentifiÃ©'};
 
-      if (AppConfig.logApiRequests) print('[API] MULTIPART POST $baseUrl/upload file: $fileName');
+      if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $fileName');
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
       request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: fileName,
+        contentType: _contentTypeFromFilename(fileName),
+      ));
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();

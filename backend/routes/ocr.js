@@ -25,15 +25,22 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
     const allowedMime = ['image/jpeg', 'image/png'];
-    if (!allowedMime.includes(file.mimetype)) {
-      return cb(new Error('Seuls JPG et PNG sont autorisés pour l’OCR')); 
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isAllowedExt = allowedExtensions.includes(ext);
+    const isAllowedMime = allowedMime.includes(file.mimetype);
+
+    // Require a matching extension AND a known image mime type
+    if (!isAllowedExt || !isAllowedMime) {
+      return cb(new Error('Seuls JPG et PNG sont autorisés pour l’OCR'));
     }
     cb(null, true);
   }
 });
 
-router.post('/extract', upload.single('file'), extractDocumentText);
-router.post('/verify', verifyDocumentData);
+// Protect OCR endpoints: require authenticated users to use OCR operations
+router.post('/extract', protect, upload.single('file'), extractDocumentText);
+router.post('/verify', protect, verifyDocumentData);
 
 module.exports = router;

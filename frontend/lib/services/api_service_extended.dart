@@ -18,7 +18,7 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
-      final uri = Uri.parse('$baseUrl/api/profile-photos/upload');
+      final uri = Uri.parse('$baseUrl/profile-photos/upload');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
       request.files.add(http.MultipartFile.fromBytes(
@@ -58,7 +58,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/profile-photos/current'),
+        Uri.parse('$baseUrl/profile-photos/current'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/profile-photos/history?limit=$limit'),
+        Uri.parse('$baseUrl/profile-photos/history?limit=$limit'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/profile-photos/$photoId'),
+        Uri.parse('$baseUrl/profile-photos/$photoId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/notifications/unread?limit=$limit'),
+        Uri.parse('$baseUrl/notifications/unread?limit=$limit'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/notifications/all?limit=$limit&offset=$offset'),
+        Uri.parse('$baseUrl/notifications/all?limit=$limit&offset=$offset'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/notifications/count'),
+        Uri.parse('$baseUrl/notifications/count'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.put(
-        Uri.parse('$baseUrl/api/notifications/$notificationId/read'),
+        Uri.parse('$baseUrl/notifications/$notificationId/read'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.put(
-        Uri.parse('$baseUrl/api/notifications/mark-all-read'),
+        Uri.parse('$baseUrl/notifications/mark-all-read'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -303,7 +303,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/notifications/$notificationId'),
+        Uri.parse('$baseUrl/notifications/$notificationId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -332,7 +332,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/notifications/delete-read'),
+        Uri.parse('$baseUrl/notifications/delete-read'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -367,7 +367,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/files/generate-signed-url'),
+        Uri.parse('$baseUrl/files/generate-signed-url'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -415,7 +415,7 @@ class ApiServiceExtended {
       final authToken = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/files/document-info/$token'),
+        Uri.parse('$baseUrl/files/document-info/$token'),
         headers: {
           'Authorization': 'Bearer $authToken',
           'Content-Type': 'application/json',
@@ -445,7 +445,7 @@ class ApiServiceExtended {
       final token = prefs.getString('token') ?? '';
 
       final response = await http.get(
-        Uri.parse('$baseUrl/api/files/access-logs/$candidatId'),
+        Uri.parse('$baseUrl/files/access-logs/$candidatId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

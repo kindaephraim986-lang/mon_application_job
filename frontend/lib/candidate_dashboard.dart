@@ -144,12 +144,14 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       _hasMonthlyPass = has;
     });
     if (has && remainingDays > 0 && remainingDays <= 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("⚠️ Votre forfait expire dans $remainingDays jours"),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("⚠️ Votre forfait expire dans $remainingDays jours"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -270,56 +272,68 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         withData: true,
       );
       if (result == null || result.files.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné")),
+          );
+        }
         return;
       }
 
       final file = result.files.first;
       final ext = _getExtension(file.name);
       if (!_validCvExtensions.contains(ext)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Format non accepté. Utilisez PDF, DOC ou DOCX.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Format non accepté. Utilisez PDF, DOC ou DOCX.")),
+          );
+        }
         return;
       }
 
       // Vérifier que ce n'est pas un document de formation
       if (_isFormationDocument(file.name)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("⚠️ Ceci semble être un diplôme ou certificat, pas un CV professionnel. Sélectionnez votre CV."),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("⚠️ Ceci semble être un diplôme ou certificat, pas un CV professionnel. Sélectionnez votre CV."),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
       Uint8List? bytes = file.bytes;
       if (bytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
+          );
+        }
         return;
       }
 
       if (!_isValidCvBytes(bytes, ext)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Fichier CV invalide. Sélectionnez un PDF, DOC ou DOCX réel.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Fichier CV invalide. Sélectionnez un PDF, DOC ou DOCX réel.")),
+          );
+        }
         return;
       }
 
       // Vérifier la taille raisonnable (CV entre 20KB et 10MB)
       final sizeInKB = bytes.lengthInBytes / 1024;
       if (sizeInKB < 20 || sizeInKB > 10000) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("La taille du fichier semble anormale (${sizeInKB.toStringAsFixed(0)} KB). Vérifiez votre CV."),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("La taille du fichier semble anormale (${sizeInKB.toStringAsFixed(0)} KB). Vérifiez votre CV."),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
@@ -328,13 +342,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         _cvFileName = file.name;
       });
       await _saveProfileDocument(bytes: bytes, fileName: file.name, urlField: 'cvUrl');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✓ CV importé avec succès"), backgroundColor: Colors.green),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✓ CV importé avec succès"), backgroundColor: Colors.green),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur lors de l'import du CV : $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur lors de l'import du CV : $e")),
+        );
+      }
     }
   }
 
@@ -348,24 +366,30 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         imageQuality: 85,
       );
       if (image == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné pour le recto de la CNIB")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné pour le recto de la CNIB")),
+          );
+        }
         return;
       }
 
       final bytes = await image.readAsBytes();
       if (!_isValidImageBytes(bytes)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
+          );
+        }
         return;
       }
 
       if (!_isValidCNIBImage(bytes)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
+          );
+        }
         return;
       }
 
@@ -374,13 +398,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         _cnibRectoFileName = image.name;
       });
       await _saveProfileDocument(bytes: bytes, fileName: image.name, urlField: 'cnibRectoUrl');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✓ Recto CNIB importé avec succès")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✓ Recto CNIB importé avec succès")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur import recto CNIB : $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur import recto CNIB : $e")),
+        );
+      }
     }
   }
 
@@ -394,24 +422,30 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         imageQuality: 85,
       );
       if (image == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné pour le verso de la CNIB")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné pour le verso de la CNIB")),
+          );
+        }
         return;
       }
 
       final bytes = await image.readAsBytes();
       if (!_isValidImageBytes(bytes)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
+          );
+        }
         return;
       }
 
       if (!_isValidCNIBImage(bytes)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
+          );
+        }
         return;
       }
 
@@ -420,13 +454,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         _cnibVersoFileName = image.name;
       });
       await _saveProfileDocument(bytes: bytes, fileName: image.name, urlField: 'cnibVersoUrl');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✓ Verso CNIB importé avec succès")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✓ Verso CNIB importé avec succès")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur import verso CNIB : $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur import verso CNIB : $e")),
+        );
+      }
     }
   }
 
@@ -521,16 +559,20 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
 
     if (existeDeja) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vous avez déjà postulé à cette offre"), backgroundColor: Colors.orange),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Vous avez déjà postulé à cette offre"), backgroundColor: Colors.orange),
+        );
+      }
       return;
     }
 
     CandidatureService().addCandidature(nouvelle);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Candidature envoyée pour ${nouvelle.offreTitre}"), backgroundColor: Colors.green),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Candidature envoyée pour ${nouvelle.offreTitre}"), backgroundColor: Colors.green),
+      );
+    }
     NotificationService.notifyCompany(
       "Nouvelle candidature de $_candidateNom pour l'offre ${nouvelle.offreTitre}",
     );
@@ -550,9 +592,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
             onPressed: () {
               CandidatureService().removeCandidature(id);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Candidature retirée avec succès")),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Candidature retirée avec succès")),
+                );
+              }
               setState(() {});
               _refreshCounts();
             },
@@ -789,6 +833,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   if (_candidateEmail.isEmpty) return;
                   await SubscriptionService.resetSubscription(_candidateEmail, 'candidate');
                   await _checkMonthlyPass();
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Abonnement réinitialisé pour test")),
                   );
@@ -1164,25 +1209,27 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
             Navigator.of(dialogContext).pop();
 
             final candidateEmail = _candidateEmail;
+            final localContext = context;
             if (candidateEmail.isEmpty) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
+              if (!localContext.mounted) return;
+              ScaffoldMessenger.of(localContext).showSnackBar(
                 const SnackBar(content: Text("Email du candidat manquant."), backgroundColor: Colors.red),
               );
               return;
             }
 
+            if (!localContext.mounted) return;
             final bool paymentSuccess = _hasMonthlyPass
                 ? true
                 : await PaymentService.payCandidatePerApplication(
-                    context,
+                    localContext,
                     candidateEmail,
                     offre['titre'] ?? 'Offre',
                   );
 
             if (!paymentSuccess) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
+              if (!localContext.mounted) return;
+              ScaffoldMessenger.of(localContext).showSnackBar(
                 const SnackBar(content: Text("❌ Paiement échoué."), backgroundColor: Colors.red),
               );
               return;
@@ -1439,6 +1486,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   }
 
   Future<bool> _sendCandidatureToBackend(String offreId) async {
+    final localContext = context;
     try {
       final offreIdInt = int.parse(offreId);
       final response = await ApiService.applyToOffer(offreIdInt);
@@ -1448,8 +1496,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       }
 
       if (response['requiresPayment'] == true) {
+        if (!localContext.mounted) return false;
         final paymentSuccess = await PaymentService.payCandidatePerApplication(
-          context,
+          localContext,
           _candidateEmail,
           'candidature',
         );
@@ -1459,14 +1508,14 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         return false;
       }
 
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!localContext.mounted) return false;
+      ScaffoldMessenger.of(localContext).showSnackBar(
         SnackBar(content: Text(response['message'] ?? 'Erreur en envoyant la candidature')),
       );
       return false;
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
           SnackBar(content: Text('Erreur du serveur : $error'), backgroundColor: Colors.red),
         );
       }
@@ -1667,10 +1716,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                     ? CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Text('${conv.nonLus}', style: const TextStyle(color: Colors.white, fontSize: 12)))
                     : const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () async {
+                  final localContext = context;
                   await ChatService.markAsReadForCandidate(conv.id);
                   await _refreshCounts();
-                  if (!mounted) return;
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => CandidateChatScreen(conversationId: conv.id, candidatData: candidatData)));
+                  if (!localContext.mounted) return;
+                  Navigator.push(localContext, MaterialPageRoute(builder: (context) => CandidateChatScreen(conversationId: conv.id, candidatData: candidatData)));
                 },
               ),
             );
@@ -1833,6 +1883,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   }
 
   Future<void> _pickImage() async {
+    final localContext = context;
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -1841,11 +1892,14 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         setState(() => _photoBytes = bytes);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur photo : $e")));
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(SnackBar(content: Text("Erreur photo : $e")));
+      }
     }
   }
 
   Future<void> _pickCV() async {
+    final localContext = context;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -1853,26 +1907,32 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         withData: true,
       );
       if (result == null || result.files.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné")),
+          );
+        }
         return;
       }
 
       final file = result.files.first;
       final ext = _getExtension(file.name);
       if (!_validCvExtensions.contains(ext)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Format non accepté. Utilisez PDF, DOC ou DOCX.")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Format non accepté. Utilisez PDF, DOC ou DOCX.")),
+          );
+        }
         return;
       }
 
       final bytes = file.bytes;
       if (bytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
+          );
+        }
         return;
       }
 
@@ -1880,17 +1940,22 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         _cvBytes = bytes;
         _cvFileName = file.name;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("CV chargé avec succès")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          const SnackBar(content: Text("CV chargé avec succès")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur CV : $e")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          SnackBar(content: Text("Erreur CV : $e")),
+        );
+      }
     }
   }
 
   Future<void> _pickCNIBRecto() async {
+    final localContext = context;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -1898,26 +1963,32 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         withData: true,
       );
       if (result == null || result.files.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné pour le recto de la CNIB")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné pour le recto de la CNIB")),
+          );
+        }
         return;
       }
 
       final file = result.files.first;
       final ext = _getExtension(file.name);
       if (!_validImageExtensions.contains(ext)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Veuillez sélectionner une image JPG ou PNG pour la CNIB")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Veuillez sélectionner une image JPG ou PNG pour la CNIB")),
+          );
+        }
         return;
       }
 
       final bytes = file.bytes;
       if (bytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
+          );
+        }
         return;
       }
 
@@ -1925,17 +1996,22 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         _cnibRectoBytes = bytes;
         _cnibRectoFileName = file.name;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Recto CNIB chargé avec succès")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          const SnackBar(content: Text("Recto CNIB chargé avec succès")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur recto CNIB : $e")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          SnackBar(content: Text("Erreur recto CNIB : $e")),
+        );
+      }
     }
   }
 
   Future<void> _pickCNIBVerso() async {
+    final localContext = context;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -1943,26 +2019,32 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         withData: true,
       );
       if (result == null || result.files.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Aucun fichier sélectionné pour le verso de la CNIB")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Aucun fichier sélectionné pour le verso de la CNIB")),
+          );
+        }
         return;
       }
 
       final file = result.files.first;
       final ext = _getExtension(file.name);
       if (!_validImageExtensions.contains(ext)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Veuillez sélectionner une image JPG ou PNG pour la CNIB")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Veuillez sélectionner une image JPG ou PNG pour la CNIB")),
+          );
+        }
         return;
       }
 
       final bytes = file.bytes;
       if (bytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
-        );
+        if (localContext.mounted) {
+          ScaffoldMessenger.of(localContext).showSnackBar(
+            const SnackBar(content: Text("Impossible de lire le fichier sélectionné.")),
+          );
+        }
         return;
       }
 
@@ -1970,13 +2052,17 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
         _cnibVersoBytes = bytes;
         _cnibVersoFileName = file.name;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Verso CNIB chargé avec succès")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          const SnackBar(content: Text("Verso CNIB chargé avec succès")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur verso CNIB : $e")),
-      );
+      if (localContext.mounted) {
+        ScaffoldMessenger.of(localContext).showSnackBar(
+          SnackBar(content: Text("Erreur verso CNIB : $e")),
+        );
+      }
     }
   }
 
@@ -1997,9 +2083,11 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
       }
       
       if (_cnibVersoBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Veuillez importer le verso de votre CNIB")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Veuillez importer le verso de votre CNIB")),
+          );
+        }
         return;
       }
 
