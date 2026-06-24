@@ -95,10 +95,53 @@ async function testRegistration(conn) {
   await conn.execute('DELETE FROM utilisateurs WHERE id = ?', [userId]);
 }
 
+async function testEnterpriseRegistration(conn) {
+  const email = randomEmail('test_entreprise');
+  const password = 'Enterprise123!';
+  const registerBody = {
+    email,
+    password,
+    userType: 'entreprise',
+    nomSociete: 'Test Société ' + Date.now(),
+    domaine: 'Technologie',
+    telephone: '+22670000001',
+    adresse: 'Ouagadougou',
+    villeLieu: 'Ouagadougou'
+  };
+
+  console.log('Testing POST /api/auth/register entreprise with email', email);
+  const registerResp = await httpRequest('/api/auth/register', 'POST', null, registerBody);
+  console.log('Enterprise register response:', registerResp.statusCode, registerResp.body);
+
+  if (registerResp.statusCode !== 201) {
+    throw new Error(`Enterprise registration failed with ${registerResp.statusCode}`);
+  }
+  if (!registerResp.body || !registerResp.body.user || !registerResp.body.user.id) {
+    throw new Error('Enterprise registration response missing expected user data');
+  }
+
+  const userId = registerResp.body.user.id;
+  const [userRows] = await conn.execute('SELECT * FROM utilisateurs WHERE id = ? AND email = ?', [userId, email]);
+  if (userRows.length !== 1) {
+    throw new Error('No matching utilisateur row found after enterprise registration');
+  }
+
+  const [companyRows] = await conn.execute('SELECT * FROM entreprises WHERE id = ?', [userId]);
+  if (companyRows.length !== 1) {
+    throw new Error('No matching entreprises row found after enterprise registration');
+  }
+
+  console.log('Enterprise registration test succeeded:', email, '-> user id', userId);
+
+  await conn.execute('DELETE FROM entreprises WHERE id = ?', [userId]);
+  await conn.execute('DELETE FROM utilisateurs WHERE id = ?', [userId]);
+}
+
 (async () => {
   const conn = await mysql.createConnection(DB_CONFIG);
   console.log('Connected to DB for tests');
   await testRegistration(conn);
+  await testEnterpriseRegistration(conn);
 
   // Create or reuse entreprise user
   let [rows] = await conn.execute('SELECT id FROM utilisateurs WHERE email = ?', ['test_ent@example.com']);

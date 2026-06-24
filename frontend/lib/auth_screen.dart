@@ -558,10 +558,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _registerCnibVersoFileName = file.name;
       }
     });
-
-    if (isRecto) {
-      await _processCnibRectoOcr();
-    }
   }
 
   Future<Map<String, String>> _uploadRegistrationDocuments() async {
@@ -834,12 +830,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         ScaffoldMessenger.of(buildContext).showSnackBar(const SnackBar(content: Text('Veuillez importer votre CV et les deux faces de votre CNIB'), backgroundColor: Colors.red));
         return;
       }
-
-      final ocrSuccess = await _processCnibRectoOcr(silent: true);
-      if (!ocrSuccess) {
-        ScaffoldMessenger.of(buildContext).showSnackBar(const SnackBar(content: Text('Vérifiez votre CNIB recto : OCR impossible ou incohérence détectée.'), backgroundColor: Colors.red));
-        return;
-      }
     }
 
     var isLoadingDialogOpen = false;
@@ -894,6 +884,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ),
             );
           }
+        } else {
+          final String message = response['message']?.toString() ?? 'Échec de la connexion';
+          if (mounted) {
+            ScaffoldMessenger.of(buildContext).showSnackBar(
+              SnackBar(content: Text(message), backgroundColor: Colors.red),
+            );
+          }
         }
       } else {
         // INSCRIPTION
@@ -933,6 +930,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         );
 
         if (registerResponse['success'] == true && registerResponse['token'] != null) {
+          if (isCandidat) {
+            final ocrSuccess = await _processCnibRectoOcr(silent: true);
+            if (!ocrSuccess) {
+              throw Exception('Vérifiez votre CNIB recto : OCR impossible ou incohérence détectée.');
+            }
+          }
           final uploadedUrls = isCandidat ? await _uploadRegistrationDocuments() : <String, String>{};
           final originalUser = Map<String, dynamic>.from(registerResponse['user'] ?? {});
           Map<String, dynamic> user = Map<String, dynamic>.from(originalUser);

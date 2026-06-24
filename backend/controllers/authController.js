@@ -19,7 +19,7 @@ const register = async (req, res) => {
             nomSociete, nom_societe, domaine, adresse, villeLieu
         } = req.body;
 
-        const nomEntreprise = nomSociete || nom_societe || '';
+        const nomEntreprise = nomSociete || nom_societe || nom || '';
 
         if (!email || !password || !userType) {
             return res.status(400).json({ message: 'Email, mot de passe et type requis' });

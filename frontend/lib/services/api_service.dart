@@ -99,6 +99,7 @@ class ApiService {
         allData['domicile'] = domicile ?? allData['domicile'];
       } else {
         allData['nomSociete'] = nom;
+        allData['nom_societe'] = nom;
         allData['domaine'] = domaine ?? allData['domaine'];
         allData['adresse'] = adresse ?? allData['adresse'];
         allData['villeLieu'] = villeLieu ?? allData['villeLieu'];
@@ -112,9 +113,10 @@ class ApiService {
         return {'success': true, 'user': data['user'], 'token': data['token']};
       } else {
         String message = 'Erreur lors de l\'inscription';
+        Map<String, dynamic>? bodyData;
         try {
-          final bodyData = jsonDecode(response.body);
-          if (bodyData is Map<String, dynamic>) {
+          bodyData = jsonDecode(response.body) as Map<String, dynamic>?;
+          if (bodyData != null) {
             if (bodyData['message'] != null) {
               message = bodyData['message'].toString();
             } else if (bodyData['errors'] is List) {
@@ -131,7 +133,10 @@ class ApiService {
         } catch (_) {
           message = response.body.isNotEmpty ? response.body : message;
         }
-        return {'success': false, 'message': message, 'status': response.statusCode};
+        if (AppConfig.logApiRequests) {
+          Logger.error('[API] register failed (${response.statusCode}): ${response.body}');
+        }
+        return {'success': false, 'message': message, 'status': response.statusCode, 'body': bodyData ?? response.body};
       }
     } catch (e) {
       return {'success': false, 'message': 'Erreur: $e'};

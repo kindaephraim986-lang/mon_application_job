@@ -26,7 +26,16 @@ class AppConfig {
 
     if (kIsWeb) {
       final origin = Uri.base.origin;
-      return '$origin/api';
+      if (origin.startsWith('http://') || origin.startsWith('https://')) {
+        final uri = Uri.parse(origin);
+        // In development, Flutter web runs on its own port, so we need to
+        // call the backend on localhost:3001 instead of the web-dev server.
+        if (environment == 'development' && (uri.host == 'localhost' || uri.host == '127.0.0.1') && uri.port != 3001) {
+          return 'http://localhost:3001/api';
+        }
+        return '$origin/api';
+      }
+      return 'http://localhost:3001/api';
     }
 
     switch (defaultTargetPlatform) {

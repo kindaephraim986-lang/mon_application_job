@@ -1,16 +1,21 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-const pool = mysql.createPool({
+const poolOptions = {
     host:     process.env.DB_HOST     || '127.0.0.1',
     port:     parseInt(process.env.DB_PORT, 10) || 3306,
     user:     process.env.DB_USER     || 'root',
-    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME     || 'bddiane_sp',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
-});
+};
+
+if (process.env.DB_PASSWORD) {
+    poolOptions.password = process.env.DB_PASSWORD;
+}
+
+const pool = mysql.createPool(poolOptions);
 
 // Tester la connexion au démarrage
 pool.getConnection((err, connection) => {

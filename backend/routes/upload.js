@@ -42,7 +42,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5 MB max par fichier
+        fileSize: 10 * 1024 * 1024, // 10 MB max par fichier
     },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -55,6 +55,17 @@ const upload = multer({
 });
 
 router.post('/', protect, upload.single('file'), (req, res) => {
+    // Debug logs: authorization header and file presence
+    try {
+        console.log('[UPLOAD DEBUG] Authorization header:', req.headers.authorization || '(none)');
+        console.log('[UPLOAD DEBUG] req.file present:', !!req.file);
+        if (req.file) {
+            console.log('[UPLOAD DEBUG] file received:', { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size });
+        }
+    } catch (e) {
+        console.error('[UPLOAD DEBUG] logging error', e);
+    }
+
     if (!req.file) {
         return res.status(400).json({ message: 'Aucun fichier reçu.' });
     }
