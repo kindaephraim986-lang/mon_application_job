@@ -5,7 +5,7 @@ COPY backend/package*.json ./backend/
 RUN cd /app/backend && npm install --production
 COPY backend ./backend
 
-FROM cirrusci/flutter:3.7.7 AS frontend-builder
+FROM cirrusci/flutter:3.16.2 AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/pubspec.* ./
