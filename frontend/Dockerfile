@@ -1,10 +1,10 @@
 # Build stage
-FROM cirrusci/flutter:3.7.7 as builder
+FROM ghcr.io/cirruslabs/flutter:stable as builder
 
 WORKDIR /app
 
 # Copier les fichiers pubspec
-COPY pubspec*.yaml ./
+COPY pubspec.* ./
 
 # Récupérer les dépendances
 RUN flutter pub get

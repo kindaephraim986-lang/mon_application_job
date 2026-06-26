@@ -2,10 +2,10 @@ FROM node:18-alpine AS backend-builder
 WORKDIR /app
 
 COPY backend/package*.json ./backend/
-RUN cd /app/backend && npm install --production
+RUN cd /app/backend && npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY backend ./backend
 
-FROM cirrusci/flutter:3.16.2 AS frontend-builder
+FROM ghcr.io/cirruslabs/flutter:stable AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/pubspec.* ./
