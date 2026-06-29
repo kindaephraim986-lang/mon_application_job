@@ -4,26 +4,7 @@ const db = require('../config/database');
 const { protect } = require('../middleware/auth');
 const { body, param, validationResult } = require('express-validator');
 
-// Simple in-memory rate limiter per user for send message actions
-const messageRate = new Map(); // userId -> { tokens, last }
-const RATE_LIMIT_TOKENS = 5;
-const RATE_LIMIT_INTERVAL = 60 * 1000; // 1 minute
-
-function allowMessage(userId) {
-    const now = Date.now();
-    const state = messageRate.get(userId) || { tokens: RATE_LIMIT_TOKENS, last: now };
-    const elapsed = now - state.last;
-    const refill = Math.floor(elapsed / RATE_LIMIT_INTERVAL) * RATE_LIMIT_TOKENS;
-    state.tokens = Math.min(RATE_LIMIT_TOKENS, state.tokens + refill);
-    state.last = now;
-    if (state.tokens > 0) {
-        state.tokens -= 1;
-        messageRate.set(userId, state);
-        return true;
-    }
-    messageRate.set(userId, state);
-    return false;
-}
+const { allowActionForUser } = require('../utils/redisRateLimiter');
 
 const validate = (checks) => [
     ...checks,
@@ -99,10 +80,9 @@ router.post('/', protect, validate([body('conversationId').isInt({ gt: 0 }), bod
         const conversationId = Number(req.body.conversationId);
         const texte = String(req.body.texte).trim();
 
-        const userId = Number(req.user.id);
-        if (!allowMessage(userId)) {
-          return res.status(429).json({ message: 'Trop de requêtes, réessayez plus tard' });
-        }
+                const userId = Number(req.user.id);
+                const allowed = await allowActionForUser(userId, 'messages', 5, 60);
+                if (!allowed) return res.status(429).json({ message: 'Trop de requêtes, réessayez plus tard' });
 
         // Vérifier que la conversation existe et que l'utilisateur y participe
         const [conv] = await db.query(

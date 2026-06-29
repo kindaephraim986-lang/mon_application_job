@@ -4,25 +4,7 @@ const db = require('../config/database');
 const { protect } = require('../middleware/auth');
 const { body, param, validationResult } = require('express-validator');
 
-// Simple rate limiter for notifications creation per user
-const notifRate = new Map();
-const NOTIF_RATE_LIMIT = 20; // per minute
-const NOTIF_RATE_INTERVAL = 60 * 1000;
-function allowNotification(userId) {
-    const now = Date.now();
-    const state = notifRate.get(userId) || { tokens: NOTIF_RATE_LIMIT, last: now };
-    const elapsed = now - state.last;
-    const refill = Math.floor(elapsed / NOTIF_RATE_INTERVAL) * NOTIF_RATE_LIMIT;
-    state.tokens = Math.min(NOTIF_RATE_LIMIT, state.tokens + refill);
-    state.last = now;
-    if (state.tokens > 0) {
-        state.tokens -= 1;
-        notifRate.set(userId, state);
-        return true;
-    }
-    notifRate.set(userId, state);
-    return false;
-}
+const { allowActionForUser } = require('../utils/redisRateLimiter');
 
 const validate = (checks) => [
     ...checks,
@@ -84,7 +66,8 @@ router.post('/', protect, validate([
     try {
         const { utilisateurId, message, type } = req.body;
         const actorId = Number(req.user.id);
-        if (!allowNotification(actorId)) return res.status(429).json({ success: false, message: 'Trop de notifications, réessayez plus tard' });
+        const allowed = await allowActionForUser(actorId, 'notifications', 20, 60);
+        if (!allowed) return res.status(429).json({ success: false, message: 'Trop de notifications, réessayez plus tard' });
 
         const [result] = await db.query(
             `INSERT INTO notifications (utilisateur_id, message, type_notification)
