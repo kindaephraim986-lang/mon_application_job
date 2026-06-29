@@ -15,6 +15,10 @@ if (process.env.DB_PASSWORD) {
     poolOptions.password = process.env.DB_PASSWORD;
 }
 
+if (process.env.DB_SSL === 'true') {
+    poolOptions.ssl = { rejectUnauthorized: false };
+}
+
 const pool = mysql.createPool(poolOptions);
 
 // Tester la connexion au démarrage
