@@ -50,6 +50,10 @@ const upload = multer({
         if (!ALLOWED_EXTENSIONS.includes(ext)) {
             return cb(new Error('Type de fichier non autorisé. Seuls PDF, DOC, DOCX, JPG et PNG sont autorisés.'));
         }
+        // Vérifier aussi le type MIME côté serveur
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+            return cb(new Error('Type MIME non autorisé pour ce fichier.'));
+        }
         cb(null, true);
     }
 });
@@ -57,8 +61,10 @@ const upload = multer({
 const uploadSingleFile = (req, res, next) => {
     upload.single('file')(req, res, err => {
         if (err) {
-            console.error('[UPLOAD ERROR]', err.message);
-            return res.status(400).json({ success: false, message: err.message || 'Erreur lors de l’envoi du fichier.' });
+            // Multer errors have a code and message
+            console.error('[UPLOAD ERROR]', err && err.message ? err.message : err);
+            const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+            return res.status(status).json({ success: false, message: err.message || 'Erreur lors de l’envoi du fichier.' });
         }
         next();
     });

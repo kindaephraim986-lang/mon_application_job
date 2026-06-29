@@ -96,39 +96,27 @@ class _DocumentViewerState extends State<DocumentViewer> {
             return _buildSubscriptionRequired();
           }
 
+          // Erreur de snapshot
+          if (snapshot.hasError) {
+            return _buildErrorContent(snapshot.error.toString());
+          }
+
           // Erreur générale
           if (snapshot.hasData && snapshot.data!['success'] != true) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    snapshot.data!['message'] ?? 'Erreur d\'accès au document',
-                    style: const TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
-                    onPressed: () {
-                      setState(_generateSignedUrl);
-                    },
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorContent(snapshot.data!['message'] ?? 'Erreur d\'accès au document');
           }
 
           // En attente
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting || !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final signedUrl = snapshot.data!['signedUrl'] as String? ?? '';
           final filename = '${widget.documentType}_${widget.candidatId}';
+
+          if (signedUrl.isEmpty) {
+            return _buildErrorContent('URL signée invalide ou manquante');
+          }
 
           return SingleChildScrollView(
             child: Column(
@@ -259,7 +247,6 @@ class _DocumentViewerState extends State<DocumentViewer> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               onPressed: () {
-                // TODO: Naviguer vers la page d'abonnement
                 Navigator.pop(context);
               },
             ),
@@ -268,7 +255,33 @@ class _DocumentViewerState extends State<DocumentViewer> {
       ),
     );
   }
-}
+  Widget _buildErrorContent(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 80, color: Colors.red[400]),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+              onPressed: () {
+                setState(_generateSignedUrl);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
 
 /// Widget simplifié pour afficher un bouton d'accès aux documents
 class DocumentAccessButton extends StatelessWidget {

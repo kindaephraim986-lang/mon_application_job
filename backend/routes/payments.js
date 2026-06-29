@@ -2,44 +2,53 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { protect, authorize } = require('../middleware/auth');
+const { body, param, validationResult } = require('express-validator');
+
+const validate = (checks) => [
+    ...checks,
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ success: false, errors: errors.array() });
+        }
+        return next();
+    }
+];
 
 // POST /api/payments/apply — Enregistrer un paiement pour candidature unitaire
-router.post('/apply', protect, authorize('candidat'), async (req, res) => {
+const applyChecks = validate([
+    body('offreId').exists().withMessage('offreId requis').bail().isInt({ gt: 0 }).withMessage('offreId doit être un entier positif'),
+    body('montant').exists().withMessage('montant requis').bail().isNumeric().withMessage('montant doit être numérique'),
+    body('methode_paiement').optional().isIn(['mobile_money', 'card', 'orange_money', 'momo']).withMessage('méthode de paiement invalide')
+]);
+
+router.post('/apply', protect, authorize('candidat'), applyChecks, async (req, res) => {
     try {
-        const { offreId, montant, methode_paiement } = req.body;
+        const offreIdValue = Number(req.body.offreId);
+        const montantValue = Number(req.body.montant);
+        const methode_paiement = req.body.methode_paiement || 'mobile_money';
 
-        if (!offreId || !montant) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'ID offre et montant requis' 
-            });
-        }
-
-        if (montant !== 500) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Montant invalide. Montant attendu: 500 FCFA' 
-            });
+        if (montantValue !== 500) {
+            return res.status(400).json({ success: false, message: 'Montant invalide. Montant attendu: 500 FCFA' });
         }
 
         // Vérifier que l'offre existe
-        const [offre] = await db.query('SELECT id FROM offres WHERE id = ?', [offreId]);
-        if (offre.length === 0) {
+        const [offre] = await db.query('SELECT id FROM offres WHERE id = ?', [offreIdValue]);
+        if (!offre || offre.length === 0) {
             return res.status(404).json({ success: false, message: 'Offre non trouvée' });
         }
+
+        const candidatId = Number(req.user.id);
 
         // Vérifier que le candidat n'a pas déjà payé pour cette offre
         const [existingPayment] = await db.query(
             `SELECT id FROM candidature_paiements 
              WHERE candidat_id = ? AND offre_id = ? AND statut = 'réussi'`,
-            [req.user.id, offreId]
+            [candidatId, offreIdValue]
         );
 
-        if (existingPayment.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Vous avez déjà payé pour cette offre' 
-            });
+        if (existingPayment && existingPayment.length > 0) {
+            return res.status(400).json({ success: false, message: 'Vous avez déjà payé pour cette offre' });
         }
 
         // Enregistrer le paiement
@@ -47,7 +56,7 @@ router.post('/apply', protect, authorize('candidat'), async (req, res) => {
             `INSERT INTO candidature_paiements 
              (candidat_id, offre_id, montant, methode_paiement, statut) 
              VALUES (?, ?, ?, ?, 'réussi')`,
-            [req.user.id, offreId, montant, methode_paiement || 'mobile_money']
+            [candidatId, offreIdValue, montantValue, methode_paiement]
         );
 
         // Enregistrer aussi dans la table paiements pour historique
@@ -55,37 +64,36 @@ router.post('/apply', protect, authorize('candidat'), async (req, res) => {
             `INSERT INTO paiements 
              (utilisateur_id, montant, devise, raison, statut) 
              VALUES (?, ?, 'FCFA', ?, 'réussi')`,
-            [req.user.id, montant, `Candidature offre ${offreId}`]
+            [candidatId, montantValue, `Candidature offre ${offreIdValue}`]
         );
 
-        res.status(201).json({ 
-            success: true, 
-            message: 'Paiement enregistré avec succès',
-            paymentId: result.insertId
-        });
+        return res.status(201).json({ success: true, message: 'Paiement enregistré avec succès', paymentId: result.insertId });
     } catch (error) {
         console.error('Payment registration error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: 'Erreur serveur lors de l’enregistrement du paiement' });
     }
 });
 
 // GET /api/payments/apply/:offreId — Vérifier si le candidat a payé pour cette offre
-router.get('/apply/:offreId', protect, authorize('candidat'), async (req, res) => {
+const checkApplyChecks = validate([
+    param('offreId').exists().withMessage('offreId requis').bail().isInt({ gt: 0 }).withMessage('offreId doit être un entier positif')
+]);
+
+router.get('/apply/:offreId', protect, authorize('candidat'), checkApplyChecks, async (req, res) => {
     try {
-        const { offreId } = req.params;
+        const offreId = Number(req.params.offreId);
+        const candidatId = Number(req.user.id);
 
         const [payment] = await db.query(
             `SELECT id, statut FROM candidature_paiements 
              WHERE candidat_id = ? AND offre_id = ? AND statut = 'réussi'`,
-            [req.user.id, offreId]
+            [candidatId, offreId]
         );
 
-        res.json({ 
-            paid: payment.length > 0,
-            paymentId: payment.length > 0 ? payment[0].id : null
-        });
+        return res.json({ paid: payment && payment.length > 0, paymentId: payment && payment.length > 0 ? payment[0].id : null });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error('GET /apply/:offreId error:', error);
+        return res.status(500).json({ success: false, message: 'Erreur serveur' });
     }
 });
 

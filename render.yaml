@@ -30,7 +30,8 @@ services:
       - key: DB_NAME
         value: "bddiane_sp"
       - key: DB_SSL
-        value: "true"
+        value: "false"
+        # Set to "true" only if the external MySQL server requires SSL/TLS.
       - key: JWT_SECRET
         sync: false
         # Générer une valeur forte, par exemple avec: openssl rand -hex 32

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-import './candidate_dashboard.dart';
-import './profile_confirmation_screen.dart';
-import './services/api_service.dart';
-import './services/ocr_service.dart';
-import './utils/ocr_helpers.dart';
+import 'candidate_dashboard.dart';
+import 'company_dashboard_screen.dart';
+import 'profile_confirmation_screen.dart';
+import 'services/api_service.dart';
+import 'services/ocr_service.dart';
+import 'utils/ocr_helpers.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -868,7 +869,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
         if (response['token'] != null) {
           final user = response['user'] ?? {};
-          final userType = user['userType']?.toString() ?? 'candidat';
+          final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
           final Map<String, String> userData = {
             'id': user['id']?.toString() ?? '',
             'email': user['email']?.toString() ?? '',
@@ -894,7 +895,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => CandidateDashboard(initialData: userData),
+              builder: (context) => userType == 'entreprise'
+                  ? CompanyDashboard(initialData: userData)
+                  : CandidateDashboard(initialData: userData),
             ),
           );
         } else {
@@ -972,7 +975,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             Navigator.pop(context);
             isLoadingDialogOpen = false;
           }
-          final userType = user['userType']?.toString() ?? 'candidat';
+          final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
           final Map<String, String> userData = {
             'id': user['id']?.toString() ?? '',
             'email': user['email']?.toString() ?? '',
@@ -998,7 +1001,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => ProfileConfirmationScreen(userData: userData),
+              builder: (context) => userType == 'entreprise'
+                  ? CompanyDashboard(initialData: userData)
+                  : ProfileConfirmationScreen(userData: userData),
             ),
           );
         } else {

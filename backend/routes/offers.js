@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { protect, authorize } = require('../middleware/auth');
+const { body, param, query, validationResult } = require('express-validator');
+
+const validate = (checks) => [
+    ...checks,
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
+        return next();
+    }
+];
 
 // GET /api/offers/my-offers — Mes offres (entreprise connectée) - DOIT ÊTRE AVANT /:id
 router.get('/my-offers', protect, authorize('entreprise'), async (req, res) => {
@@ -18,7 +28,14 @@ router.get('/my-offers', protect, authorize('entreprise'), async (req, res) => {
 
 // GET /api/offers — Toutes les offres (public)
 // support query params: search, type, lieu, field
-router.get('/', async (req, res) => {
+router.get('/',
+    validate([
+        query('search').optional().isLength({ max: 200 }).trim().escape(),
+        query('type').optional().isLength({ max: 50 }).trim().escape(),
+        query('lieu').optional().isLength({ max: 100 }).trim().escape(),
+        query('field').optional().isLength({ max: 100 }).trim().escape()
+    ]),
+    async (req, res) => {
     try {
         const { search, type, lieu, field } = req.query;
         let query = `
@@ -89,7 +106,7 @@ router.get('/fields', async (req, res) => {
 });
 
 // GET /api/offers/:id — Détail d'une offre
-router.get('/:id', async (req, res) => {
+router.get('/:id', validate([param('id').isInt({ gt: 0 }).withMessage('id invalide')]), async (req, res) => {
     try {
         const [rows] = await db.query(
             `SELECT o.*, e.nom_societe, e.logo_url, e.ville_lieu, e.domaine_activite, e.telephone
@@ -108,7 +125,17 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/offers — Créer une offre (entreprise seulement)
-router.post('/', protect, authorize('entreprise'), async (req, res) => {
+router.post('/', protect, authorize('entreprise'), validate([
+    body('titre').trim().isLength({ min: 3, max: 200 }).withMessage('Titre invalide'),
+    body('description').trim().isLength({ min: 10 }).withMessage('Description trop courte'),
+    body('type_contrat').optional().trim().isLength({ max: 50 }).escape(),
+    body('lieu').optional().trim().isLength({ max: 120 }).escape(),
+    body('competences').optional().trim().isLength({ max: 500 }).escape(),
+    body('niveau').optional().trim().isLength({ max: 100 }).escape(),
+    body('experience').optional().trim().isLength({ max: 100 }).escape(),
+    body('salaire').optional().isNumeric()
+]),
+async (req, res) => {
     try {
         const {
             titre,
@@ -142,7 +169,7 @@ router.post('/', protect, authorize('entreprise'), async (req, res) => {
 });
 
 // DELETE /api/offers/:id — Supprimer une offre
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, validate([param('id').isInt({ gt: 0 }).withMessage('id invalide')]), async (req, res) => {
     try {
         // L'admin peut supprimer n'importe quelle offre; l'entreprise ne peut supprimer que les siennes
         const offerId = req.params.id;

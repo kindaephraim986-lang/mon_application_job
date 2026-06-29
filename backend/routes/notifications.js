@@ -2,6 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { protect } = require('../middleware/auth');
+const { body, param, validationResult } = require('express-validator');
+
+// Simple rate limiter for notifications creation per user
+const notifRate = new Map();
+const NOTIF_RATE_LIMIT = 20; // per minute
+const NOTIF_RATE_INTERVAL = 60 * 1000;
+function allowNotification(userId) {
+    const now = Date.now();
+    const state = notifRate.get(userId) || { tokens: NOTIF_RATE_LIMIT, last: now };
+    const elapsed = now - state.last;
+    const refill = Math.floor(elapsed / NOTIF_RATE_INTERVAL) * NOTIF_RATE_LIMIT;
+    state.tokens = Math.min(NOTIF_RATE_LIMIT, state.tokens + refill);
+    state.last = now;
+    if (state.tokens > 0) {
+        state.tokens -= 1;
+        notifRate.set(userId, state);
+        return true;
+    }
+    notifRate.set(userId, state);
+    return false;
+}
+
+const validate = (checks) => [
+    ...checks,
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(422).json({ success: false, errors: errors.array() });
+        return next();
+    }
+];
 
 // GET /api/notifications — Obtenir mes notifications
 router.get('/', protect, async (req, res) => {
@@ -47,13 +77,14 @@ router.put('/mark/all', protect, async (req, res) => {
 });
 
 // POST /api/notifications — Créer une notification (interne)
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, validate([
+  body('utilisateurId').exists().withMessage('utilisateurId requis').bail().isInt({ gt: 0 }),
+  body('message').exists().withMessage('message requis').bail().trim().isLength({ min: 1, max: 1000 })
+]), async (req, res) => {
     try {
         const { utilisateurId, message, type } = req.body;
-
-        if (!utilisateurId || !message) {
-            return res.status(400).json({ message: 'Utilisateur et message requis' });
-        }
+        const actorId = Number(req.user.id);
+        if (!allowNotification(actorId)) return res.status(429).json({ success: false, message: 'Trop de notifications, réessayez plus tard' });
 
         const [result] = await db.query(
             `INSERT INTO notifications (utilisateur_id, message, type_notification)
@@ -61,13 +92,10 @@ router.post('/', protect, async (req, res) => {
             [utilisateurId, message, type || null]
         );
 
-        res.status(201).json({
-            success: true,
-            id: result.insertId,
-            message: 'Notification créée'
-        });
+        res.status(201).json({ success: true, id: result.insertId, message: 'Notification créée' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('CREATE NOTIFICATION ERROR:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la création de la notification' });
     }
 });
 

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import './auth_screen.dart';
-import './candidate_dashboard.dart';
-import './screens/home_page.dart';
-import './services/api_service.dart';
-import './config/app_config.dart';
-import './admin_dashboard_v2.dart';
+import 'auth_screen.dart';
+import 'candidate_dashboard.dart';
+import 'company_dashboard_screen.dart';
+import 'screens/home_page.dart';
+import 'services/api_service.dart';
+import 'config/app_config.dart';
+import 'admin_dashboard_v2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -210,13 +211,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
                   final user = userSnapshot.data;
                   if (user != null) {
-                    final userData = {
+                    final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
+                  final userData = {
                       'id': user['id'].toString(),
                       'email': user['email'].toString(),
-                      'userType': user['userType'].toString(),
+                      'userType': userType,
                       'nom': user['nom']?.toString() ?? '',
                       'nom_societe': user['nom_societe']?.toString() ??
-                          (user['userType']?.toString() == 'entreprise'
+                          (userType == 'entreprise'
                               ? user['nom']?.toString() ?? ''
                               : ''),
                       'filiere': (user['filiere'] ?? user['filiere_specialite'])
@@ -231,15 +233,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
                       'villeLieu': user['villeLieu']?.toString() ?? ''
                     };
 
-                    if (user['userType'] == 'admin') {
+                    if (userType == 'admin') {
                       return const AdminDashboard();
                     }
 
-                    if (user['userType'] == 'candidat') {
-                      return CandidateDashboard(initialData: userData);
-                    } else {
-                      return CandidateDashboard(initialData: userData);
+                    if (userType == 'entreprise') {
+                      return CompanyDashboard(initialData: userData);
                     }
+
+                    return CandidateDashboard(initialData: userData);
                   }
                   return const AuthScreen();
                 },

@@ -7,7 +7,7 @@ const path = require('path');
 const app = require('../server');
 
 const TEST_USER_ID = 'user_1781527027036';
-const JWT_SECRET = process.env.JWT_SECRET || 'Job Research_dev_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'afrijob_dev_secret';
 
 function makeToken() {
   return jwt.sign({ id: TEST_USER_ID }, JWT_SECRET, { expiresIn: '1h' });

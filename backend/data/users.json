@@ -25,7 +25,7 @@
   },
   "user_admin_kinda": {
     "id": "user_admin_kinda",
-    "email": "kinda@admin.com",
+    "email": "kinda@gmail.com",
     "password": "$2a$10$VF0L4/jQV4JH0E8fR/yF0uMBd6ChT8Vaw23RHI0ZHEK1X2Mri5s0G",
     "userType": "admin",
     "profile": {

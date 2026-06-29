@@ -78,9 +78,12 @@ const register = async (req, res) => {
             return res.status(400).json({ message: 'Email, mot de passe et type requis' });
         }
 
+        // Normaliser l'email pour cohérence
+        const normalizedEmail = normalizeLoginEmail(email);
+
         // Vérifier si email existe déjà
         const [existing] = await db.query(
-            'SELECT id FROM utilisateurs WHERE email = ?', [email]
+            'SELECT id FROM utilisateurs WHERE email = ?', [normalizedEmail]
         );
         if (existing.length > 0) {
             return res.status(400).json({ message: 'Cet email est déjà utilisé' });
@@ -92,7 +95,7 @@ const register = async (req, res) => {
         // Insérer dans utilisateurs
         const [result] = await db.query(
             'INSERT INTO utilisateurs (email, mot_de_passe, type_utilisateur) VALUES (?, ?, ?)',
-            [email, hashedPassword, userType]
+            [normalizedEmail, hashedPassword, userType]
         );
         const userId = result.insertId;
 
@@ -130,7 +133,7 @@ const register = async (req, res) => {
 
         const userResponse = {
             id: userId,
-            email,
+            email: normalizedEmail,
             userType,
             nom: userType === 'candidat' ? nom : nomEntreprise,
             telephone: telephone || '',
@@ -292,31 +295,32 @@ const updateProfile = async (req, res) => {
 
         if (req.user.type_utilisateur === 'candidat') {
             const { nom, telephone, filiere, age, domicile, sexe, photoUrl, cvUrl, cnibRectoUrl, cnibVersoUrl } = req.body;
+            const ageValue = age != null && age !== '' ? parseInt(age, 10) : undefined;
 
             await db.query(
                 `UPDATE candidats
-                 SET nom_complet = ?,
-                     telephone = ?,
-                     filiere_specialite = ?,
-                     age = ?,
-                     domicile = ?,
-                     sexe = ?,
+                 SET nom_complet = COALESCE(NULLIF(?, ''), nom_complet),
+                     telephone = COALESCE(NULLIF(?, ''), telephone),
+                     filiere_specialite = COALESCE(NULLIF(?, ''), filiere_specialite),
+                     age = COALESCE(?, age),
+                     domicile = COALESCE(NULLIF(?, ''), domicile),
+                     sexe = COALESCE(NULLIF(?, ''), sexe),
                      photo_profil_url = COALESCE(?, photo_profil_url),
                      cv_url = COALESCE(?, cv_url),
                      cnib_recto_url = COALESCE(?, cnib_recto_url),
                      cnib_verso_url = COALESCE(?, cnib_verso_url)
                  WHERE id = ?`,
                 [
-                    nom || '',
-                    telephone || null,
-                    filiere || null,
-                    age ? parseInt(age) : null,
-                    domicile || null,
-                    sexe || null,
-                    photoUrl || null,
-                    cvUrl || null,
-                    cnibRectoUrl || null,
-                    cnibVersoUrl || null,
+                    nom ?? '',
+                    telephone ?? null,
+                    filiere ?? null,
+                    ageValue,
+                    domicile ?? null,
+                    sexe ?? null,
+                    photoUrl ?? null,
+                    cvUrl ?? null,
+                    cnibRectoUrl ?? null,
+                    cnibVersoUrl ?? null,
                     req.user.id
                 ]
             );
@@ -348,8 +352,14 @@ const updateProfile = async (req, res) => {
             const { nom, telephone, domaine, adresse, villeLieu } = req.body;
 
             await db.query(
-                'UPDATE entreprises SET nom_societe = ?, telephone = ?, domaine_activite = ?, adresse_complete = ?, ville_lieu = ? WHERE id = ?',
-                [nom || '', telephone || null, domaine || null, adresse || null, villeLieu || null, req.user.id]
+                `UPDATE entreprises
+                 SET nom_societe = COALESCE(NULLIF(?, ''), nom_societe),
+                     telephone = COALESCE(NULLIF(?, ''), telephone),
+                     domaine_activite = COALESCE(NULLIF(?, ''), domaine_activite),
+                     adresse_complete = COALESCE(NULLIF(?, ''), adresse_complete),
+                     ville_lieu = COALESCE(NULLIF(?, ''), ville_lieu)
+                 WHERE id = ?`,
+                [nom ?? null, telephone ?? null, domaine ?? null, adresse ?? null, villeLieu ?? null, req.user.id]
             );
 
             // Récupérer le profil mis à jour

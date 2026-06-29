@@ -2,6 +2,37 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { protect } = require('../middleware/auth');
+const { body, param, validationResult } = require('express-validator');
+
+// Simple in-memory rate limiter per user for send message actions
+const messageRate = new Map(); // userId -> { tokens, last }
+const RATE_LIMIT_TOKENS = 5;
+const RATE_LIMIT_INTERVAL = 60 * 1000; // 1 minute
+
+function allowMessage(userId) {
+    const now = Date.now();
+    const state = messageRate.get(userId) || { tokens: RATE_LIMIT_TOKENS, last: now };
+    const elapsed = now - state.last;
+    const refill = Math.floor(elapsed / RATE_LIMIT_INTERVAL) * RATE_LIMIT_TOKENS;
+    state.tokens = Math.min(RATE_LIMIT_TOKENS, state.tokens + refill);
+    state.last = now;
+    if (state.tokens > 0) {
+        state.tokens -= 1;
+        messageRate.set(userId, state);
+        return true;
+    }
+    messageRate.set(userId, state);
+    return false;
+}
+
+const validate = (checks) => [
+    ...checks,
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(422).json({ message: 'Validation error', errors: errors.array() });
+        return next();
+    }
+];
 
 // GET /api/messages/conversations — Obtenir mes conversations
 router.get('/conversations', protect, async (req, res) => {
@@ -44,8 +75,9 @@ router.get('/conversations', protect, async (req, res) => {
 });
 
 // GET /api/messages/conversations/:id — Obtenir les messages d'une conversation
-router.get('/conversations/:id', protect, async (req, res) => {
+router.get('/conversations/:id', protect, validate([param('id').isInt({ gt: 0 })]), async (req, res) => {
     try {
+        const convId = Number(req.params.id);
         const [rows] = await db.query(
             `SELECT m.id, m.expediteur_id, m.texte, m.date_envoi,
                     u.email, u.type_utilisateur
@@ -53,7 +85,7 @@ router.get('/conversations/:id', protect, async (req, res) => {
              JOIN utilisateurs u ON m.expediteur_id = u.id
              WHERE m.conversation_id = ?
              ORDER BY m.date_envoi ASC`,
-            [req.params.id]
+            [convId]
         );
         res.json(rows);
     } catch (error) {
@@ -62,19 +94,21 @@ router.get('/conversations/:id', protect, async (req, res) => {
 });
 
 // POST /api/messages — Envoyer un message
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, validate([body('conversationId').isInt({ gt: 0 }), body('texte').trim().isLength({ min: 1, max: 2000 })]), async (req, res) => {
     try {
-        const { conversationId, texte } = req.body;
+        const conversationId = Number(req.body.conversationId);
+        const texte = String(req.body.texte).trim();
 
-        if (!conversationId || !texte) {
-            return res.status(400).json({ message: 'ID conversation et texte requis' });
+        const userId = Number(req.user.id);
+        if (!allowMessage(userId)) {
+          return res.status(429).json({ message: 'Trop de requêtes, réessayez plus tard' });
         }
 
         // Vérifier que la conversation existe et que l'utilisateur y participe
         const [conv] = await db.query(
             `SELECT * FROM conversations 
              WHERE id = ? AND (candidat_id = ? OR entreprise_id = ?)`,
-            [conversationId, req.user.id, req.user.id]
+            [conversationId, userId, userId]
         );
 
         if (conv.length === 0) {
@@ -84,17 +118,13 @@ router.post('/', protect, async (req, res) => {
         const [result] = await db.query(
             `INSERT INTO messages (conversation_id, expediteur_id, texte)
              VALUES (?, ?, ?)`,
-            [conversationId, req.user.id, texte]
+            [conversationId, userId, texte]
         );
 
-        res.status(201).json({
-            success: true,
-            id: result.insertId,
-            message: 'Message envoyé avec succès'
-        });
+        res.status(201).json({ success: true, id: result.insertId, message: 'Message envoyé avec succès' });
     } catch (error) {
         console.error('SEND MESSAGE ERROR:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Erreur serveur lors de l’envoi du message' });
     }
 });
 

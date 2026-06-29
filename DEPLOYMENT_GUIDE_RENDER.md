@@ -113,6 +113,8 @@ services:
         value: "your-secure-password"
       - key: DB_NAME
         value: "bddiane_sp"
+      - key: DB_SSL
+        value: "false"  # Set to "true" only if your MySQL server requires SSL/TLS
       
       # CORS & URLs
       - key: CORS_ORIGIN

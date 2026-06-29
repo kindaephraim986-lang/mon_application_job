@@ -27,6 +27,7 @@ Dans Render, ajoutez ces variables d'environnement:
 - `DB_USER=your-mysql-user`
 - `DB_PASSWORD=your-mysql-password`
 - `DB_NAME=bddiane_sp`
+- `DB_SSL=false`  # Set to `true` only if your MySQL provider requires SSL/TLS
 - `JWT_SECRET=your-jwt-secret`
 - `FILE_SIGNATURE_SECRET=your-file-signature-secret`
 
