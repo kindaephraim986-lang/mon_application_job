@@ -1,0 +1,59 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Backend - install dependencies
+        working-directory: ./backend
+        run: |
+          npm ci
+
+      - name: Backend - run integration tests
+        working-directory: ./backend
+        run: |
+          npm run test-api
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && secrets.DEPLOY_SSH_PRIVATE_KEY != ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.7.4
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+
+      - name: Deploy to remote server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            cd /var/www/afrijob || true
+            # If repo exists, pull latest; otherwise clone
+            if [ -d .git ]; then
+              git fetch --all && git reset --hard origin/${GITHUB_REF##*/}
+            else
+              git clone https://github.com/${{ github.repository }} .
+            fi
+            docker compose pull || true
+            docker compose up -d --build

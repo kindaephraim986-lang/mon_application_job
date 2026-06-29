@@ -49,6 +49,21 @@ DB_HOST=localhost
 DB_USER=afrijob_user
 DB_PASSWORD=YOUR_SECURE_PASSWORD_HERE
 DB_NAME=bddiane_sp
+ 
+---
+
+## Notes pour le déploiement automatisé
+
+- Redis: le projet utilise Redis pour le rate-limiter en production. Assurez-vous que Redis est installé et accessible via la variable d'environnement `REDIS_URL` (ex: `redis://redis:6379`).
+- Docker: si vous déployez avec Docker Compose, démarrez le moteur Docker puis lancez depuis la racine du dépôt:
+
+```bash
+docker compose up -d --build
+```
+
+- CI/CD (optionnel): un workflow GitHub Actions `CI & Deploy` a été ajouté dans `.github/workflows/ci-deploy.yml`. Configurez les secrets `DEPLOY_SSH_PRIVATE_KEY`, `DEPLOY_HOST`, `DEPLOY_USER` pour permettre un déploiement automatique via SSH.
+
+Si vous voulez que je pousse ces étapes plus loin (ex: créer images et publier sur un registre, écrire scripts de migration, ou automatiser le rollback), dites-moi quelle cible de déploiement vous souhaitez (VPS SSH, Render, Railway, Kubernetes, etc.).
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-this
