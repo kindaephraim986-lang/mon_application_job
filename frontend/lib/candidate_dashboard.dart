@@ -266,7 +266,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
 
   Future<void> _importCV() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validCvExtensions,
         withData: true,
@@ -1901,7 +1901,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCV() async {
     final localContext = context;
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validCvExtensions,
         withData: true,
@@ -1957,7 +1957,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCNIBRecto() async {
     final localContext = context;
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validImageExtensions,
         withData: true,
@@ -2013,7 +2013,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCNIBVerso() async {
     final localContext = context;
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validImageExtensions,
         withData: true,

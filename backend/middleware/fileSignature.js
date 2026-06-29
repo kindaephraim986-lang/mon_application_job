@@ -149,9 +149,9 @@ const verifyFileSignature = async (req, res, next) => {
  */
 const verifyProfileAccess = async (req, res, next) => {
   try {
-    const candidatId = req.params.candidat_id || req.body?.candidat_id;
-    const requesterType = req.user?.type; // 'candidat' ou 'entreprise'
-    const requesterId = req.user?.id;
+    const candidatId = req.params.candidat_id ? parseInt(req.params.candidat_id, 10) : req.body?.candidat_id ? parseInt(req.body.candidat_id, 10) : null;
+    const requesterType = req.user?.type || req.user?.type_utilisateur || req.user?.user_type; // 'candidat' ou 'entreprise'
+    const requesterId = typeof req.user?.id === 'string' ? parseInt(req.user.id, 10) : req.user?.id;
 
     // Si c'est le candidat lui-même
     if (requesterType === 'candidat' && requesterId === candidatId) {

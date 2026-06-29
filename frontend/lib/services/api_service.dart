@@ -35,6 +35,13 @@ Future<http.Response> _httpPut(String url, {Map<String, String>? headers, dynami
   return resp;
 }
 
+Future<http.Response> _httpDelete(String url, {Map<String, String>? headers}) async {
+  Logger.api('DELETE', url, headers: headers);
+  final resp = await http.delete(Uri.parse(url), headers: headers);
+  Logger.apiResponse(resp.statusCode, resp.body);
+  return resp;
+}
+
 MediaType _contentTypeFromFilename(String fileName) {
   final name = fileName.toLowerCase();
   if (name.endsWith('.jpg') || name.endsWith('.jpeg')) {
@@ -166,7 +173,7 @@ class ApiService {
   /// Vérifier si l'utilisateur est connecté
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey('token');
+    return prefs.containsKey(AppConfig.tokenKey);
   }
 
   /// Obtenir l'utilisateur actuel
@@ -318,7 +325,7 @@ class ApiService {
   /// Déconnexion
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
+    await prefs.remove(AppConfig.tokenKey);
   }
 
   // ===================== OFFRES D'EMPLOI =====================
@@ -442,6 +449,29 @@ class ApiService {
         return {'success': true, ...jsonDecode(response.body)};
       }
       return {'success': false, 'message': jsonDecode(response.body)['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// Supprimer une offre d'emploi (admin/company)
+  static Future<Map<String, dynamic>> deleteOffer(int offerId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpDelete(
+        '$baseUrl/offers/$offerId',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur lors de la suppression'};
     } catch (e) {
       return {'success': false, 'message': 'Erreur: $e'};
     }
@@ -761,11 +791,12 @@ class ApiService {
   static Future<Map<String, dynamic>> uploadFile(String filePath) async {
     try {
       final token = await _getToken();
-      if (token == null) return {'success': false, 'message': 'Non authentifié'};
 
       if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $filePath');
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
-      request.headers['Authorization'] = 'Bearer $token';
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
 
       var response = await request.send();
@@ -787,11 +818,12 @@ class ApiService {
   }) async {
     try {
       final token = await _getToken();
-      if (token == null) return {'success': false, 'message': 'Non authentifiÃ©'};
 
       if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $fileName');
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
-      request.headers['Authorization'] = 'Bearer $token';
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
       request.files.add(http.MultipartFile.fromBytes(
         'file',
         bytes,
@@ -819,16 +851,253 @@ class ApiService {
     }
   }
 
+  // ===================== ADMINISTRATION =====================
+
+  /// GET /api/admin/stats — Récupérer les statistiques
+  static Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpGet(
+        '$baseUrl/admin/stats',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': 'Erreur lors de la récupération des statistiques'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// GET /api/admin/users — Lister tous les utilisateurs
+  static Future<List<Map<String, dynamic>>> getAdminUsers() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await _httpGet(
+        '$baseUrl/admin/users',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final users = data['users'] as List?;
+        return users?.map((u) => Map<String, dynamic>.from(u)).toList() ?? [];
+      }
+      return [];
+    } catch (e) {
+      Logger.error('Erreur getAdminUsers: $e');
+      return [];
+    }
+  }
+
+  /// PUT /api/admin/users/:id — Modifier un utilisateur
+  static Future<Map<String, dynamic>> updateAdminUser(
+    int userId, {
+    String? nom,
+    String? email,
+    String? role,
+    String? telephone,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final body = {};
+      if (nom != null) body['nom'] = nom;
+      if (email != null) body['email'] = email;
+      if (role != null) body['role'] = role;
+      if (telephone != null) body['telephone'] = telephone;
+
+      final response = await _httpPut(
+        '$baseUrl/admin/users/$userId',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// DELETE /api/admin/users/:id — Supprimer un utilisateur
+  static Future<Map<String, dynamic>> deleteAdminUser(int userId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpDelete(
+        '$baseUrl/admin/users/$userId',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// GET /api/admin/offers — Lister toutes les offres
+  static Future<List<Map<String, dynamic>>> getAdminOffers() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await _httpGet(
+        '$baseUrl/admin/offers',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final offers = data['offers'] as List?;
+        return offers?.map((o) => Map<String, dynamic>.from(o)).toList() ?? [];
+      }
+      return [];
+    } catch (e) {
+      Logger.error('Erreur getAdminOffers: $e');
+      return [];
+    }
+  }
+
+  /// PUT /api/admin/offers/:id — Modifier une offre
+  static Future<Map<String, dynamic>> updateAdminOffer(
+    int offerId, {
+    String? titre,
+    String? description,
+    String? typeContrat,
+    String? lieu,
+    String? salaire,
+    String? competences,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final body = {};
+      if (titre != null) body['titre'] = titre;
+      if (description != null) body['description'] = description;
+      if (typeContrat != null) body['type_contrat'] = typeContrat;
+      if (lieu != null) body['lieu'] = lieu;
+      if (salaire != null) body['salaire'] = salaire;
+      if (competences != null) body['competences'] = competences;
+
+      final response = await _httpPut(
+        '$baseUrl/admin/offers/$offerId',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// GET /api/admin/applications — Lister toutes les candidatures
+  static Future<List<Map<String, dynamic>>> getAdminApplications() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await _httpGet(
+        '$baseUrl/admin/applications',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final apps = data['applications'] as List?;
+        return apps?.map((a) => Map<String, dynamic>.from(a)).toList() ?? [];
+      }
+      return [];
+    } catch (e) {
+      Logger.error('Erreur getAdminApplications: $e');
+      return [];
+    }
+  }
+
+  /// PUT /api/admin/applications/:id — Modifier le statut d'une candidature
+  static Future<Map<String, dynamic>> updateAdminApplication(
+    int applicationId,
+    String statut,
+  ) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpPut(
+        '$baseUrl/admin/applications/$applicationId',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: {'statut': statut},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// GET /api/admin/payments — Lister tous les paiements
+  static Future<List<Map<String, dynamic>>> getAdminPayments() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await _httpGet(
+        '$baseUrl/admin/payments',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final payments = data['payments'] as List?;
+        return payments?.map((p) => Map<String, dynamic>.from(p)).toList() ?? [];
+      }
+      return [];
+    } catch (e) {
+      Logger.error('Erreur getAdminPayments: $e');
+      return [];
+    }
+  }
+
   // ===================== HELPER METHODS =====================
 
   static Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
+    await prefs.setString(AppConfig.tokenKey, token);
   }
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    return prefs.getString(AppConfig.tokenKey);
   }
 
   // Wrappers for extended API methods (defined in api_service_extended.dart)

@@ -42,7 +42,8 @@ const protect = async (req, res, next) => {
                 id: user.id,
                 email: user.email,
                 type_utilisateur: user.userType,
-                user_type: user.userType
+                user_type: user.userType,
+                type: user.userType
             };
             return next();
         }
@@ -59,6 +60,7 @@ const protect = async (req, res, next) => {
         req.user = users[0];
         // Alias pour compatibilité
         req.user.user_type = users[0].type_utilisateur;
+        req.user.type = users[0].type_utilisateur;
         next();
     } catch (error) {
         return res.status(401).json({ message: 'Token invalide ou expiré' });
@@ -67,11 +69,19 @@ const protect = async (req, res, next) => {
 
 const authorize = (...types) => {
     return (req, res, next) => {
-        if (!types.includes(req.user.type_utilisateur)) {
-            return res.status(403).json({ message: 'Accès refusé pour ce type de compte' });
+        const userType = req.user?.type_utilisateur || req.user?.user_type || req.user?.type || '';
+        const isAdmin = userType === 'admin';
+
+        if (isAdmin || types.includes(userType)) {
+            return next();
         }
-        next();
+
+        return res.status(403).json({ message: 'Accès refusé pour ce type de compte' });
     };
 };
 
-module.exports = { protect, authorize };
+module.exports = {
+    protect,
+    authorize,
+    authenticateToken: protect,
+};

@@ -2,7 +2,7 @@ services:
   - type: web
     name: job-research
     env: docker
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./Dockerfile
     branch: main
     autoDeploy: true
     plan: starter
@@ -13,23 +13,28 @@ services:
       - key: PORT
         value: "3000"
       - key: CORS_ORIGIN
-        sync: false  # Set to your deployed frontend domain (e.g. https://your-frontend.onrender.com)
+        sync: false
+        # Exemple: https://your-frontend.onrender.com
       - key: FRONTEND_URL
-        sync: false  # Set to your deployed frontend URL
+        sync: false
+        # Exemple: https://job-research.onrender.com
       - key: DB_HOST
-        sync: false  # Required: Set to your MySQL host (Railway/PlanetScale)
+        sync: false
+        # Exemple: db.example.com (MySQL externe, pas localhost)
       - key: DB_PORT
         value: "3306"
       - key: DB_USER
-        sync: false  # Required: Set to your MySQL user
+        sync: false
       - key: DB_PASSWORD
-        sync: false  # Required: Set to your MySQL password
+        sync: false
       - key: DB_NAME
-        value: "job_research"
+        value: "bddiane_sp"
       - key: JWT_SECRET
-        sync: false  # Required: set a secure random 32-byte hex string
+        sync: false
+        # Générer une valeur forte, par exemple avec: openssl rand -hex 32
       - key: FILE_SIGNATURE_SECRET
-        sync: false  # Required: set a secure random 32-byte hex string
+        sync: false
+        # Générer une valeur forte, par exemple avec: openssl rand -hex 32
       - key: LOG_LEVEL
         value: info
       - key: UPLOAD_DIR

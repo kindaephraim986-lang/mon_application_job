@@ -1,39 +1,19 @@
-# Build stage
-FROM node:18-alpine as builder
-
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copier les fichiers de dépendances
 COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
-# Installer les dépendances de production
-RUN npm ci --only=production
-
-# ========================================
-# Production stage
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copier les dépendances du builder
-COPY --from=builder /app/node_modules /app/node_modules
-
-# Copier le reste du code
 COPY . .
 
-# Créer les répertoires uploads et logs
 RUN mkdir -p uploads logs
 
-# Exposer le port
-EXPOSE 5000
+EXPOSE 3000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+  CMD node -e "const http=require('http'); const port=process.env.PORT || 3000; http.get({host:'127.0.0.1', port, path:'/api/health'}, (r) => {process.exit(r.statusCode === 200 ? 0 : 1);}).on('error', () => process.exit(1));"
 
-# Variables d'environnement par défaut
 ENV NODE_ENV=production
-ENV PORT=5000
+ENV PORT=3000
 
-# Démarrer le serveur
 CMD ["node", "server.js"]

@@ -1,13 +1,11 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-import 'candidate_dashboard.dart';
-import 'company_dashboard.dart';
-import 'profile_confirmation_screen.dart';
-import 'services/api_service.dart';
-import 'services/ocr_service.dart';
-import 'utils/ocr_helpers.dart';
+import './candidate_dashboard.dart';
+import './profile_confirmation_screen.dart';
+import './services/api_service.dart';
+import './services/ocr_service.dart';
+import './utils/ocr_helpers.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -512,7 +510,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _pickRegisterCV() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: _validCvExtensions,
       withData: true,
@@ -534,7 +532,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _pickRegisterCNIB({required bool isRecto}) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: _validImageExtensions,
       withData: true,
@@ -558,6 +556,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         _registerCnibVersoFileName = file.name;
       }
     });
+
+    if (isRecto) {
+      await _processCnibRectoOcr();
+    }
   }
 
   Future<Map<String, String>> _uploadRegistrationDocuments() async {
@@ -797,45 +799,56 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   Widget _buildToggleAuthButton() {
     return Center(
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: const TextStyle(fontSize: 14, color: Color(0xFF7A8A99)),
-          children: [
-            TextSpan(text: isLogin ? "Pas encore de compte ? " : "Déjà un compte ? "),
-            TextSpan(
-              text: isLogin ? "Inscrivez-vous" : "Connectez-vous",
-              style: const TextStyle(
-                color: Color(0xFF667eea),
-                fontWeight: FontWeight.w600,
+      child: TextButton(
+        onPressed: () => setState(() => isLogin = !isLogin),
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF7A8A99)),
+        child: RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: const TextStyle(fontSize: 14, color: Color(0xFF7A8A99)),
+            children: [
+              TextSpan(text: isLogin ? "Pas encore de compte ? " : "Déjà un compte ? "),
+              TextSpan(
+                text: isLogin ? "Inscrivez-vous" : "Connectez-vous",
+                style: const TextStyle(
+                  color: Color(0xFF667eea),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              recognizer: TapGestureRecognizer()..onTap = () => setState(() => isLogin = !isLogin),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Future<void> _handleAuth() async {
-    final buildContext = context;
-    // Vérifier le formulaire Flutter
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(buildContext).showSnackBar(const SnackBar(content: Text('Veuillez corriger les erreurs du formulaire'), backgroundColor: Colors.red));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez corriger les erreurs du formulaire'), backgroundColor: Colors.red));
       return;
     }
 
     if (!isLogin && isCandidat) {
       if (_registerCvBytes == null || _registerCnibRectoBytes == null || _registerCnibVersoBytes == null) {
-        ScaffoldMessenger.of(buildContext).showSnackBar(const SnackBar(content: Text('Veuillez importer votre CV et les deux faces de votre CNIB'), backgroundColor: Colors.red));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez importer votre CV et les deux faces de votre CNIB'), backgroundColor: Colors.red));
+        return;
+      }
+
+      final ocrSuccess = await _processCnibRectoOcr(silent: true);
+      if (!ocrSuccess) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vérifiez votre CNIB recto : OCR impossible ou incohérence détectée.'), backgroundColor: Colors.red));
         return;
       }
     }
 
     var isLoadingDialogOpen = false;
     try {
+      if (!mounted) return;
       showDialog(
-        context: buildContext,
+        context: context,
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
       );
@@ -847,8 +860,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           password: _passController.text,
         );
 
-        if (mounted && isLoadingDialogOpen) {
-          Navigator.pop(buildContext);
+        if (!mounted) return;
+        if (isLoadingDialogOpen) {
+          Navigator.pop(context);
           isLoadingDialogOpen = false;
         }
 
@@ -876,21 +890,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             'cnibVersoUrl': user['cnibVersoUrl']?.toString() ?? ''
           };
 
-          if (mounted) {
-            Navigator.pushReplacement(
-              buildContext,
-              MaterialPageRoute(
-                builder: (context) => userType == 'entreprise' ? CompanyDashboard(initialData: userData) : CandidateDashboard(initialData: userData),
-              ),
-            );
-          }
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CandidateDashboard(initialData: userData),
+            ),
+          );
         } else {
           final String message = response['message']?.toString() ?? 'Échec de la connexion';
-          if (mounted) {
-            ScaffoldMessenger.of(buildContext).showSnackBar(
-              SnackBar(content: Text(message), backgroundColor: Colors.red),
-            );
-          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message), backgroundColor: Colors.red),
+          );
         }
       } else {
         // INSCRIPTION
@@ -929,13 +941,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           extraData: extraData,
         );
 
+        if (!mounted) return;
         if (registerResponse['success'] == true && registerResponse['token'] != null) {
-          if (isCandidat) {
-            final ocrSuccess = await _processCnibRectoOcr(silent: true);
-            if (!ocrSuccess) {
-              throw Exception('Vérifiez votre CNIB recto : OCR impossible ou incohérence détectée.');
-            }
-          }
           final uploadedUrls = isCandidat ? await _uploadRegistrationDocuments() : <String, String>{};
           final originalUser = Map<String, dynamic>.from(registerResponse['user'] ?? {});
           Map<String, dynamic> user = Map<String, dynamic>.from(originalUser);
@@ -960,8 +967,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               throw Exception(updateResponse['message'] ?? "Documents non sauvegardÃ©s");
             }
           }
-          if (mounted && isLoadingDialogOpen) {
-            Navigator.pop(buildContext);
+          if (!mounted) return;
+          if (isLoadingDialogOpen) {
+            Navigator.pop(context);
             isLoadingDialogOpen = false;
           }
           final userType = user['userType']?.toString() ?? 'candidat';
@@ -986,33 +994,30 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             'cnibVersoUrl': user['cnibVersoUrl']?.toString() ?? ''
           };
 
-          if (mounted) {
-            Navigator.pushReplacement(
-              buildContext,
-              MaterialPageRoute(
-                builder: (context) => userType == 'entreprise' ? CompanyDashboard(initialData: userData) : ProfileConfirmationScreen(userData: userData),
-              ),
-            );
-          }
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfileConfirmationScreen(userData: userData),
+            ),
+          );
         } else {
           final String message = registerResponse['message']?.toString() ?? 'Erreur lors de l\'inscription';
-          if (mounted) {
-            ScaffoldMessenger.of(buildContext).showSnackBar(
-              SnackBar(
-                content: Text(message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (e) {
-      if (mounted && isLoadingDialogOpen) {
-        Navigator.pop(buildContext);
+      if (!mounted) return;
+      if (isLoadingDialogOpen) {
+        Navigator.pop(context);
       }
-      if (mounted) {
-        ScaffoldMessenger.of(buildContext).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception:', '')), backgroundColor: Colors.red));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception:', '')), backgroundColor: Colors.red));
     }
   }
 }

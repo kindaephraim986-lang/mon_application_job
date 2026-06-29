@@ -58,7 +58,7 @@ services:
     networks:
       - afrijob-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${BACKEND_PORT:-5000}/api/health || exit 1"]
       timeout: 5s
       retries: 5
       interval: 30s

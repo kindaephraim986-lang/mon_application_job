@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'auth_screen.dart';
-import 'candidate_dashboard.dart';
-import 'company_dashboard.dart';
-import 'screens/home_page.dart';
-import 'services/api_service.dart';
-import 'config/app_config.dart';
+import './auth_screen.dart';
+import './candidate_dashboard.dart';
+import './screens/home_page.dart';
+import './services/api_service.dart';
+import './config/app_config.dart';
+import './admin_dashboard_v2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -231,10 +231,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
                       'villeLieu': user['villeLieu']?.toString() ?? ''
                     };
 
+                    if (user['userType'] == 'admin') {
+                      return const AdminDashboard();
+                    }
+
                     if (user['userType'] == 'candidat') {
                       return CandidateDashboard(initialData: userData);
                     } else {
-                      return CompanyDashboard(initialData: userData);
+                      return CandidateDashboard(initialData: userData);
                     }
                   }
                   return const AuthScreen();

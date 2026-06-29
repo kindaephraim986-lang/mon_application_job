@@ -21,8 +21,8 @@ const UPLOADS_DIR = path.join(__dirname, '../uploads');
 router.post('/generate-signed-url', authenticateToken, async (req, res) => {
   try {
     const { documentId, documentType, candidatId } = req.body;
-    const requesterId = req.user.id;
-    const requesterType = req.user.type; // 'candidat' ou 'entreprise'
+    const requesterId = typeof req.user?.id === 'string' ? parseInt(req.user.id, 10) : req.user?.id;
+    const requesterType = req.user?.type || req.user?.type_utilisateur || req.user?.user_type || null; // 'candidat' ou 'entreprise'
 
     if (!documentId || !documentType || !candidatId) {
       return res.status(400).json({
@@ -60,13 +60,20 @@ router.post('/generate-signed-url', authenticateToken, async (req, res) => {
     }
 
     // Générer l'URL signée
-    const signedUrl = await generateSignedFileUrl(
+    let signedUrl = await generateSignedFileUrl(
       documentId,
       documentType,
       candidatId,
       requesterId,
       requesterType
     );
+
+    // Retourner une URL absolue pour éviter les problèmes de chemin relatif depuis le frontend
+    const protocol = req.protocol;
+    const host = req.get('host');
+    if (signedUrl.startsWith('/') && host) {
+      signedUrl = `${protocol}://${host}${signedUrl}`;
+    }
 
     res.json({
       success: true,
@@ -207,11 +214,11 @@ router.get('/document-info/:token', verifyFileSignature, async (req, res) => {
  */
 router.get('/access-logs/:candidatId', authenticateToken, async (req, res) => {
   try {
-    const candidatId = req.params.candidatId;
-    const userId = req.user.id;
+    const candidatId = parseInt(req.params.candidatId, 10);
+    const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
 
     // Seul le candidat peut voir ses propres logs
-    if (userId !== parseInt(candidatId)) {
+    if (userId !== candidatId) {
       return res.status(403).json({
         success: false,
         message: 'Accès refusé'

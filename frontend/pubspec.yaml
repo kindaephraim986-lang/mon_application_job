@@ -1,10 +1,10 @@
-name: job_research
+name: job_research_frontend
 description: Application de recherche d'emploi
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=2.19.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -18,7 +18,7 @@ dependencies:
   
   # Images et fichiers
   image_picker: ^0.8.7+4
-  file_picker: ^5.2.0
+  file_picker: ^11.0.2
   
   # Stockage local
   shared_preferences: ^2.2.0
@@ -27,7 +27,7 @@ dependencies:
   http: ^1.1.0
   http_parser: ^4.0.0
   webview_flutter: ^4.2.2
-  js: ^0.6.6
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

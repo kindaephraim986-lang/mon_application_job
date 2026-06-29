@@ -142,11 +142,32 @@ router.post('/', protect, authorize('entreprise'), async (req, res) => {
 });
 
 // DELETE /api/offers/:id — Supprimer une offre
-router.delete('/:id', protect, authorize('entreprise'), async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
     try {
+        // L'admin peut supprimer n'importe quelle offre; l'entreprise ne peut supprimer que les siennes
+        const offerId = req.params.id;
+        const userType = req.user?.type_utilisateur || req.user?.user_type || req.user?.type || '';
+        
+        if (userType === 'admin') {
+            // Admin peut supprimer n'importe quelle offre
+            const [result] = await db.query(
+                'DELETE FROM offres WHERE id = ?',
+                [offerId]
+            );
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Offre non trouvée' });
+            }
+            return res.json({ success: true, message: 'Offre supprimée par l\'administrateur' });
+        }
+        
+        // Entreprise ne peut supprimer que ses propres offres
+        if (userType !== 'entreprise') {
+            return res.status(403).json({ message: 'Non autorisé' });
+        }
+        
         const [result] = await db.query(
             'DELETE FROM offres WHERE id = ? AND entreprise_id = ?',
-            [req.params.id, req.user.id]
+            [offerId, req.user.id]
         );
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Offre non trouvée ou non autorisé' });

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:typed_data';
-import 'dart:io';
 import 'notification_service.dart';
 import 'chat_service.dart';
 import 'profile_image_helper.dart';
@@ -10,6 +9,7 @@ import 'candidature_service.dart';
 import 'payment_service.dart';
 import 'subscription_service.dart';
 import 'services/api_service.dart';
+import 'services/file_actions.dart';
 
 class CompanyDashboard extends StatefulWidget {
   final Map<String, String> initialData;
@@ -151,10 +151,23 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       return;
     }
 
+    if (await FileActions.openBytesInBrowser(
+      cvBytes,
+      fileName,
+      'application/pdf',
+    )) {
+      return;
+    }
+
     final localContext = context;
-    final tempDir = await Directory.systemTemp.createTemp('cv_preview_');
-    final file = File('${tempDir.path}/$fileName');
-    await file.writeAsBytes(cvBytes);
+    final filePath = await FileActions.createTemporaryFile(cvBytes, fileName);
+    if (filePath == null) {
+      if (!localContext.mounted) return;
+      ScaffoldMessenger.of(localContext).showSnackBar(
+        const SnackBar(content: Text("Impossible de préparer l'aperçu du CV")),
+      );
+      return;
+    }
 
     if (!localContext.mounted) return;
     showDialog(
@@ -177,7 +190,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
             ),
             body: WebViewWidget(
               controller: WebViewController()
-                ..loadRequest(Uri.file(file.path)),
+                ..loadRequest(Uri.file(filePath)),
             ),
           ),
         ),
@@ -186,7 +199,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   }
 
   Future<void> _pickLogo() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.image);
     if (result != null) {
       final bytes = result.files.first.bytes;
       final name = result.files.first.name;
@@ -423,32 +436,23 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   }
 
   Future<void> _downloadFile(Uint8List bytes, String suggestedName) async {
-  try {
-    // Utilise file_picker pour sauvegarder le fichier sur l'appareil de l'entreprise
-    String? outputPath = await FilePicker.platform.saveFile(
-      dialogTitle: "Enregistrer le fichier",
-      fileName: suggestedName,
-    );
-    
-    if (outputPath != null) {
-      final File file = File(outputPath);
-      await file.writeAsBytes(bytes); // Écriture des octets du fichier
-      
+    try {
+      final saved = await FileActions.saveBytesToDownloads(bytes, suggestedName);
+      if (!saved) return;
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Fichier enregistré : $suggestedName")),
+          SnackBar(content: Text("Fichier enregistr� : $suggestedName")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Erreur : $e"), backgroundColor: Colors.red),
-      );
-    }
   }
-}
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

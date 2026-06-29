@@ -1,6 +1,59 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 const db = require('../config/database');
+
+const usersFile = path.join(__dirname, '../data/users.json');
+const ADMIN_EMAIL = 'kinda@admin.com';
+
+const normalizeLoginEmail = (email = '') => {
+    const normalized = email.trim().toLowerCase();
+    if (normalized === 'kinda' || normalized === 'admin' || normalized === 'kinda@admin.com') {
+        return ADMIN_EMAIL;
+    }
+    return normalized;
+};
+
+const loadLocalUsers = () => {
+    try {
+        if (fs.existsSync(usersFile)) {
+            return JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+        }
+    } catch (error) {
+        console.warn('Impossible de lire users.json', error);
+    }
+    return {};
+};
+
+const saveLocalUsers = (users) => {
+    try {
+        fs.writeFileSync(usersFile, JSON.stringify(users, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Impossible de sauvegarder users.json', error);
+    }
+};
+
+const getLocalUserResponse = (user) => {
+    const profile = user.profile || {};
+    return {
+        id: user.id,
+        email: user.email,
+        userType: user.userType,
+        nom: profile.nom || '',
+        telephone: profile.telephone || '',
+        filiere: profile.filiere || '',
+        age: profile.age != null ? profile.age.toString() : '',
+        domicile: profile.domicile || '',
+        sexe: profile.sexe || '',
+        adresse: profile.adresse || '',
+        villeLieu: profile.villeLieu || '',
+        photo: profile.photoUrl || '',
+        cvUrl: profile.cvUrl || '',
+        cnibRectoUrl: profile.cnibRectoUrl || '',
+        cnibVersoUrl: profile.cnibVersoUrl || ''
+    };
+};
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET || 'afrijob_dev_secret', {
@@ -111,9 +164,11 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Email et mot de passe requis' });
         }
 
+        const normalizedEmail = normalizeLoginEmail(email);
+
         // Récupérer l'utilisateur
         const [users] = await db.query(
-            'SELECT * FROM utilisateurs WHERE email = ?', [email]
+            'SELECT * FROM utilisateurs WHERE email = ?', [normalizedEmail]
         );
         if (users.length === 0) {
             return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
@@ -129,7 +184,9 @@ const login = async (req, res) => {
 
         // Récupérer les infos du profil
         let profileData = {};
-        if (user.type_utilisateur === 'candidat') {
+        if (user.type_utilisateur === 'admin') {
+            profileData = { nom_complet: 'KINDA', telephone: '', filiere_specialite: '', age: null, domicile: '', sexe: '', photo_profil_url: '', cv_url: '', cnib_recto_url: '', cnib_verso_url: '' };
+        } else if (user.type_utilisateur === 'candidat') {
             const [rows] = await db.query(
                 'SELECT nom_complet, telephone, filiere_specialite, age, domicile, sexe, photo_profil_url, cv_url, cnib_recto_url, cnib_verso_url FROM candidats WHERE id = ?',
                 [user.id]
@@ -152,7 +209,7 @@ const login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 userType: user.type_utilisateur,
-                nom: profileData.nom_complet || profileData.nom_societe || '',
+                nom: profileData.nom_complet || profileData.nom_societe || (user.type_utilisateur === 'admin' ? 'KINDA' : ''),
                 telephone: profileData.telephone || '',
                 filiere: profileData.filiere_specialite || '',
                 domaine: profileData.domaine_activite || '',
@@ -188,7 +245,9 @@ const getMe = async (req, res) => {
         const user = users[0];
         let profileData = {};
 
-        if (user.type_utilisateur === 'candidat') {
+        if (user.type_utilisateur === 'admin') {
+            profileData = { nom_complet: 'KINDA' };
+        } else if (user.type_utilisateur === 'candidat') {
             const [rows] = await db.query('SELECT * FROM candidats WHERE id = ?', [user.id]);
             if (rows.length > 0) profileData = rows[0];
         } else {
@@ -221,6 +280,16 @@ const getMe = async (req, res) => {
 // ===================== MODIFIER PROFIL =====================
 const updateProfile = async (req, res) => {
     try {
+        if (req.user.type_utilisateur === 'admin') {
+            return res.json({
+                success: true,
+                message: 'Profil administrateur mis à jour avec succès',
+                user: {
+                    nom: 'KINDA'
+                }
+            });
+        }
+
         if (req.user.type_utilisateur === 'candidat') {
             const { nom, telephone, filiere, age, domicile, sexe, photoUrl, cvUrl, cnibRectoUrl, cnibVersoUrl } = req.body;
 

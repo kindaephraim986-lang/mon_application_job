@@ -33,6 +33,9 @@ class AppConfig {
         if (environment == 'development' && (uri.host == 'localhost' || uri.host == '127.0.0.1') && uri.port != 3001) {
           return 'http://localhost:3001/api';
         }
+        // In production, prefer the same-origin API when the frontend is served
+        // by the backend server. A custom API URL can still be injected via
+        // --dart-define=API_BASE_URL for deployments on a separate domain.
         return '$origin/api';
       }
       return 'http://localhost:3001/api';

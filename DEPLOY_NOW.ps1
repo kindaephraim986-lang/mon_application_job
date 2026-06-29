@@ -2,7 +2,7 @@
 # 
 # This script provides a quick reference for deploying to production
 # Save as: DEPLOY_NOW.ps1
-# Run: .\DEPLOY_NOW.ps1
+# Run: .\DEPLOY_NOW.ps1 bloque c
 
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════════════════════════╗"

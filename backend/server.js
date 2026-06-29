@@ -14,6 +14,10 @@ const notificationsRoutes = require('./routes/notifications');
 const paymentsRoutes = require('./routes/payments');
 const ocrRoutes = require('./routes/ocr');
 const healthRoutes = require('./routes/health');
+const filesRoutes = require('./routes/files');
+const profilePhotosRoutes = require('./routes/profilePhotos');
+const adminRoutes = require('./routes/admin');
+let devTestUploadRoutes;
 
 const app = express();
 
@@ -74,10 +78,20 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/profile-photos', profilePhotosRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
 
-// Serve the Flutter web build if it is present in /app/public
-const frontendPath = path.join(__dirname, 'public');
+// Mount dev-only routes when in development
+if (isDev) {
+  devTestUploadRoutes = require('./routes/dev_test_upload');
+  app.use('/api', devTestUploadRoutes);
+}
+
+// Serve the Flutter web build copied by the root Dockerfile to /app/public.
+const frontendPath = path.join(__dirname, '..', 'public');
 app.use(express.static(frontendPath));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {

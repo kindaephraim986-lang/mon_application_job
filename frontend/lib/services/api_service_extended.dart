@@ -16,7 +16,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final uri = Uri.parse('$baseUrl/profile-photos/upload');
       final request = http.MultipartRequest('POST', uri);
@@ -55,7 +55,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getCurrentProfilePhoto() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/profile-photos/current'),
@@ -85,7 +85,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getPhotoHistory(int limit) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/profile-photos/history?limit=$limit'),
@@ -116,7 +116,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> deleteProfilePhoto(int photoId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.delete(
         Uri.parse('$baseUrl/profile-photos/$photoId'),
@@ -148,7 +148,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getUnreadNotifications(int limit) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/unread?limit=$limit'),
@@ -179,7 +179,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getAllNotifications(int limit, int offset) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/all?limit=$limit&offset=$offset'),
@@ -210,7 +210,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getUnreadCount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/count'),
@@ -241,7 +241,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> markNotificationAsRead(int notificationId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.put(
         Uri.parse('$baseUrl/notifications/$notificationId/read'),
@@ -271,7 +271,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> markAllNotificationsAsRead() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.put(
         Uri.parse('$baseUrl/notifications/mark-all-read'),
@@ -300,7 +300,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> deleteNotification(int notificationId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.delete(
         Uri.parse('$baseUrl/notifications/$notificationId'),
@@ -329,7 +329,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> deleteReadNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.delete(
         Uri.parse('$baseUrl/notifications/delete-read'),
@@ -364,7 +364,7 @@ class ApiServiceExtended {
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.post(
         Uri.parse('$baseUrl/files/generate-signed-url'),
@@ -412,7 +412,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getDocumentInfo(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('token') ?? '';
+      final authToken = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/files/document-info/$token'),
@@ -442,7 +442,7 @@ class ApiServiceExtended {
   static Future<Map<String, dynamic>> getDocumentAccessLogs(int candidatId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
       final response = await http.get(
         Uri.parse('$baseUrl/files/access-logs/$candidatId'),

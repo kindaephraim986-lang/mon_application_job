@@ -11,8 +11,10 @@ const profilePhotoService = require('../services/profilePhotoService');
 const { authenticateToken } = require('../middleware/auth');
 
 // Configuration multer pour les uploads de photos
+// Utiliser memoryStorage afin de fournir `req.file.buffer` attendu par le service
+const storage = multer.memoryStorage();
 const upload = multer({
-  dest: path.join(__dirname, '../uploads/profile-photos'),
+  storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   fileFilter: (req, file, cb) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

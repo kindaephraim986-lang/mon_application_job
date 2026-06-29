@@ -23,6 +23,7 @@ const ALLOWED_MIME_TYPES = [
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'image/jpeg',
+    'image/jpg',
     'image/png'
 ];
 
@@ -46,16 +47,43 @@ const upload = multer({
     },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
-        const mime = file.mimetype;
-        if (!ALLOWED_EXTENSIONS.includes(ext) || !ALLOWED_MIME_TYPES.includes(mime)) {
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
             return cb(new Error('Type de fichier non autorisé. Seuls PDF, DOC, DOCX, JPG et PNG sont autorisés.'));
         }
         cb(null, true);
     }
 });
 
-router.post('/', protect, upload.single('file'), (req, res) => {
-    // Debug logs: authorization header and file presence
+const uploadSingleFile = (req, res, next) => {
+    upload.single('file')(req, res, err => {
+        if (err) {
+            console.error('[UPLOAD ERROR]', err.message);
+            return res.status(400).json({ success: false, message: err.message || 'Erreur lors de l’envoi du fichier.' });
+        }
+        next();
+    });
+};
+
+// Allow anonymous uploads for registration flow. If a Bearer token is provided
+// we try to parse it and attach a lightweight req.user, but uploads do not
+// require authentication anymore.
+router.post('/', uploadSingleFile, async (req, res) => {
+    try {
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            const token = req.headers.authorization.split(' ')[1];
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'afrijob_dev_secret');
+                if (decoded && decoded.id) {
+                    req.user = { id: decoded.id, type_utilisateur: decoded.type_utilisateur || null };
+                }
+            } catch (e) {
+                console.warn('[UPLOAD DEBUG] invalid token provided, proceeding as anonymous');
+            }
+        }
+    } catch (e) {
+        // ignore token parsing errors
+    }
     try {
         console.log('[UPLOAD DEBUG] Authorization header:', req.headers.authorization || '(none)');
         console.log('[UPLOAD DEBUG] req.file present:', !!req.file);

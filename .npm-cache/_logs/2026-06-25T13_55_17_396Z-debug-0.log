@@ -1,0 +1,184 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.9.4
+2 info using node@v22.21.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\SYST\Desktop\Job_Research\backend\.npmrc
+5 silly config load:file:C:\Users\SYST\.npmrc
+6 silly config load:file:C:\Users\SYST\Desktop\Job_Research\backend\etc\npmrc
+7 verbose title npm install
+8 verbose argv "--prefix" "backend" "install" "--package-lock-only" "--ignore-scripts" "--cache" ".\\.npm-cache" "--loglevel" "verbose"
+9 verbose logfile logs-max:10 dir:C:\Users\SYST\Desktop\Job_Research\.npm-cache\_logs\2026-06-25T13_55_17_396Z-
+10 verbose logfile C:\Users\SYST\Desktop\Job_Research\.npm-cache\_logs\2026-06-25T13_55_17_396Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly idealTree buildDeps
+14 silly placeDep ROOT undefined@ OK for: job-research-backend@1.0.0 want: file:..
+15 silly audit bulk request {
+15 silly audit   '@types/node': [ '25.9.3' ],
+15 silly audit   accepts: [ '1.3.8' ],
+15 silly audit   anymatch: [ '3.1.3' ],
+15 silly audit   'append-field': [ '1.0.0' ],
+15 silly audit   'array-flatten': [ '1.1.1' ],
+15 silly audit   'aws-ssl-profiles': [ '1.1.2' ],
+15 silly audit   'balanced-match': [ '4.0.4' ],
+15 silly audit   bcryptjs: [ '2.4.3' ],
+15 silly audit   'binary-extensions': [ '2.3.0' ],
+15 silly audit   'bmp-js': [ '0.1.0' ],
+15 silly audit   'body-parser': [ '1.20.5' ],
+15 silly audit   'brace-expansion': [ '5.0.6' ],
+15 silly audit   braces: [ '3.0.3' ],
+15 silly audit   'buffer-equal-constant-time': [ '1.0.1' ],
+15 silly audit   'buffer-from': [ '1.1.2' ],
+15 silly audit   busboy: [ '1.6.0' ],
+15 silly audit   bytes: [ '3.1.2' ],
+15 silly audit   'call-bind-apply-helpers': [ '1.0.2' ],
+15 silly audit   'call-bound': [ '1.0.4' ],
+15 silly audit   chokidar: [ '3.6.0' ],
+15 silly audit   'concat-stream': [ '2.0.0' ],
+15 silly audit   'content-disposition': [ '0.5.4' ],
+15 silly audit   'content-type': [ '1.0.5' ],
+15 silly audit   cookie: [ '0.7.2' ],
+15 silly audit   'cookie-signature': [ '1.0.7' ],
+15 silly audit   cors: [ '2.8.6' ],
+15 silly audit   debug: [ '2.6.9', '4.4.3' ],
+15 silly audit   denque: [ '2.1.0' ],
+15 silly audit   depd: [ '2.0.0' ],
+15 silly audit   destroy: [ '1.2.0' ],
+15 silly audit   dotenv: [ '16.6.1' ],
+15 silly audit   'dunder-proto': [ '1.0.1' ],
+15 silly audit   'ecdsa-sig-formatter': [ '1.0.11' ],
+15 silly audit   'ee-first': [ '1.1.1' ],
+15 silly audit   encodeurl: [ '2.0.0' ],
+15 silly audit   'es-define-property': [ '1.0.1' ],
+15 silly audit   'es-errors': [ '1.3.0' ],
+15 silly audit   'es-object-atoms': [ '1.1.2' ],
+15 silly audit   'escape-html': [ '1.0.3' ],
+15 silly audit   etag: [ '1.8.1' ],
+15 silly audit   express: [ '4.22.2' ],
+15 silly audit   'express-validator': [ '7.3.2' ],
+15 silly audit   'fill-range': [ '7.1.1' ],
+15 silly audit   finalhandler: [ '1.3.2' ],
+15 silly audit   forwarded: [ '0.2.0' ],
+15 silly audit   fresh: [ '0.5.2' ],
+15 silly audit   fsevents: [ '2.3.3' ],
+15 silly audit   'function-bind': [ '1.1.2' ],
+15 silly audit   'generate-function': [ '2.3.1' ],
+15 silly audit   'get-intrinsic': [ '1.3.0' ],
+15 silly audit   'get-proto': [ '1.0.1' ],
+15 silly audit   'glob-parent': [ '5.1.2' ],
+15 silly audit   gopd: [ '1.2.0' ],
+15 silly audit   'has-flag': [ '3.0.0' ],
+15 silly audit   'has-symbols': [ '1.1.0' ],
+15 silly audit   hasown: [ '2.0.4' ],
+15 silly audit   'http-errors': [ '2.0.1' ],
+15 silly audit   'iconv-lite': [ '0.4.24', '0.7.2' ],
+15 silly audit   'idb-keyval': [ '6.2.5' ],
+15 silly audit   'ignore-by-default': [ '1.0.1' ],
+15 silly audit   inherits: [ '2.0.4' ],
+15 silly audit   'ipaddr.js': [ '1.9.1' ],
+15 silly audit   'is-binary-path': [ '2.1.0' ],
+15 silly audit   'is-electron': [ '2.2.2' ],
+15 silly audit   'is-extglob': [ '2.1.1' ],
+15 silly audit   'is-glob': [ '4.0.3' ],
+15 silly audit   'is-number': [ '7.0.0' ],
+15 silly audit   'is-property': [ '1.0.2' ],
+15 silly audit   'is-url': [ '1.2.4' ],
+15 silly audit   jsonwebtoken: [ '9.0.3' ],
+15 silly audit   ms: [ '2.1.3', '2.0.0' ],
+15 silly audit   jwa: [ '2.0.1' ],
+15 silly audit   jws: [ '4.0.1' ],
+15 silly audit   lodash: [ '4.18.1' ],
+15 silly audit   'lodash.includes': [ '4.3.0' ],
+15 silly audit   'lodash.isboolean': [ '3.0.3' ],
+15 silly audit   'lodash.isinteger': [ '4.0.4' ],
+15 silly audit   'lodash.isnumber': [ '3.0.3' ],
+15 silly audit   'lodash.isplainobject': [ '4.0.6' ],
+15 silly audit   'lodash.isstring': [ '4.0.1' ],
+15 silly audit   'lodash.once': [ '4.1.1' ],
+15 silly audit   long: [ '5.3.2' ],
+15 silly audit   'lru.min': [ '1.1.4' ],
+15 silly audit   'math-intrinsics': [ '1.1.0' ],
+15 silly audit   'media-typer': [ '0.3.0' ],
+15 silly audit   'merge-descriptors': [ '1.0.3' ],
+15 silly audit   methods: [ '1.1.2' ],
+15 silly audit   mime: [ '1.6.0' ],
+15 silly audit   'mime-db': [ '1.52.0' ],
+15 silly audit   'mime-types': [ '2.1.35' ],
+15 silly audit   minimatch: [ '10.2.5' ],
+15 silly audit   multer: [ '2.2.0' ],
+15 silly audit   mysql2: [ '3.22.5' ],
+15 silly audit   'named-placeholders': [ '1.1.6' ],
+15 silly audit   negotiator: [ '0.6.3' ],
+15 silly audit   'node-fetch': [ '2.7.0' ],
+15 silly audit   nodemon: [ '3.1.14' ],
+15 silly audit   'normalize-path': [ '3.0.0' ],
+15 silly audit   'object-assign': [ '4.1.1' ],
+15 silly audit   'object-inspect': [ '1.13.4' ],
+15 silly audit   'on-finished': [ '2.4.1' ],
+15 silly audit   'opencollective-postinstall': [ '2.0.3' ],
+15 silly audit   parseurl: [ '1.3.3' ],
+15 silly audit   'path-to-regexp': [ '0.1.13' ],
+15 silly audit   picomatch: [ '2.3.2' ],
+15 silly audit   'proxy-addr': [ '2.0.7' ],
+15 silly audit   'pstree.remy': [ '1.1.8' ],
+15 silly audit   qs: [ '6.15.2' ],
+15 silly audit   'range-parser': [ '1.2.1' ],
+15 silly audit   'raw-body': [ '2.5.3' ],
+15 silly audit   'readable-stream': [ '3.6.2' ],
+15 silly audit   readdirp: [ '3.6.0' ],
+15 silly audit   'regenerator-runtime': [ '0.13.11' ],
+15 silly audit   'safe-buffer': [ '5.2.1' ],
+15 silly audit   'safer-buffer': [ '2.1.2' ],
+15 silly audit   semver: [ '7.8.4' ],
+15 silly audit   send: [ '0.19.2' ],
+15 silly audit   'serve-static': [ '1.16.3' ],
+15 silly audit   setprototypeof: [ '1.2.0' ],
+15 silly audit   'side-channel': [ '1.1.1' ],
+15 silly audit   'side-channel-list': [ '1.0.1' ],
+15 silly audit   'side-channel-map': [ '1.0.1' ],
+15 silly audit   'side-channel-weakmap': [ '1.0.2' ],
+15 silly audit   'simple-update-notifier': [ '2.0.0' ],
+15 silly audit   'sql-escaper': [ '1.3.3' ],
+15 silly audit   statuses: [ '2.0.2' ],
+15 silly audit   streamsearch: [ '1.1.0' ],
+15 silly audit   string_decoder: [ '1.3.0' ],
+15 silly audit   'supports-color': [ '5.5.0' ],
+15 silly audit   'tesseract.js': [ '4.1.4' ],
+15 silly audit   'tesseract.js-core': [ '4.0.4' ],
+15 silly audit   'to-regex-range': [ '5.0.1' ],
+15 silly audit   toidentifier: [ '1.0.1' ],
+15 silly audit   touch: [ '3.1.1' ],
+15 silly audit   tr46: [ '0.0.3' ],
+15 silly audit   'type-is': [ '1.6.18' ],
+15 silly audit   typedarray: [ '0.0.6' ],
+15 silly audit   undefsafe: [ '2.0.5' ],
+15 silly audit   'undici-types': [ '7.24.6' ],
+15 silly audit   unpipe: [ '1.0.0' ],
+15 silly audit   'util-deprecate': [ '1.0.2' ],
+15 silly audit   'utils-merge': [ '1.0.1' ],
+15 silly audit   validator: [ '13.15.35' ],
+15 silly audit   vary: [ '1.1.2' ],
+15 silly audit   'wasm-feature-detect': [ '1.8.0' ],
+15 silly audit   'webidl-conversions': [ '3.0.1' ],
+15 silly audit   'whatwg-url': [ '5.0.0' ],
+15 silly audit   zlibjs: [ '0.3.1' ]
+15 silly audit }
+16 verbose stack TypeError: Cannot read properties of undefined (reading 'spec')
+16 verbose stack     at updateNodes (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:1302:44)
+16 verbose stack     at [saveIdealTree] (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:1471:11)
+16 verbose stack     at Arborist.reify (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:148:31)
+16 verbose stack     at async Install.exec (C:\Program Files\nodejs\node_modules\npm\lib\commands\install.js:150:5)
+16 verbose stack     at async Npm.exec (C:\Program Files\nodejs\node_modules\npm\lib\npm.js:207:9)
+16 verbose stack     at async module.exports (C:\Program Files\nodejs\node_modules\npm\lib\cli\entry.js:74:5)
+17 error Cannot read properties of undefined (reading 'spec')
+18 silly unfinished npm timer reify 1782395718346
+19 silly unfinished npm timer reify:audit 1782395718445
+20 silly unfinished npm timer auditReport:getReport 1782395718445
+21 silly unfinished npm timer reify:save 1782395718452
+22 verbose cwd C:\Users\SYST\Desktop\Job_Research
+23 verbose os Windows_NT 10.0.26200
+24 verbose node v22.21.0
+25 verbose npm  v10.9.4
+26 verbose exit 1
+27 verbose code 1
+28 error A complete log of this run can be found in: C:\Users\SYST\Desktop\Job_Research\.npm-cache\_logs\2026-06-25T13_55_17_396Z-debug-0.log

@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS `utilisateurs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `email` varchar(191) NOT NULL,
   `mot_de_passe` varchar(255) NOT NULL,
-  `type_utilisateur` enum('candidat','entreprise') NOT NULL,
+  `type_utilisateur` enum('candidat','entreprise','admin') NOT NULL,
   `date_creation` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
