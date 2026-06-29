@@ -39,6 +39,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${BACKEND_PORT:-5000}
@@ -50,6 +52,7 @@ services:
       FILE_SIGNATURE_SECRET: ${FILE_SIGNATURE_SECRET:-your-file-secret-key}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     volumes:
@@ -143,8 +146,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    profiles:
-      - with-cache  # Activer avec: docker-compose --profile with-cache up
+    # Enabled by default for production deployments. Remove if not needed.
 
   # Backup Service (optionnel)
   backup:
