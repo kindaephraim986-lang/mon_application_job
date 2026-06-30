@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth_screen.dart';
 import 'candidate_dashboard.dart';
-import 'company_dashboard_screen.dart';
+import 'package:job_research_frontend/company_dashboard_impl.dart';
 import 'screens/home_page.dart';
 import 'services/api_service.dart';
 import 'config/app_config.dart';
