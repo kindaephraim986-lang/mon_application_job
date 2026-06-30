@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'candidate_dashboard.dart';
-import 'package:job_research_frontend/company_dashboard_impl.dart';
+import './company_dashboard_impl.dart';
 import 'profile_confirmation_screen.dart';
 import 'services/api_service.dart';
 import 'services/ocr_service.dart';
