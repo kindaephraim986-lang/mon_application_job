@@ -39,8 +39,9 @@ const upload = multer({
   }
 });
 
-// Protect OCR endpoints: require authenticated users to use OCR operations
-router.post('/extract', protect, upload.single('file'), extractDocumentText);
-router.post('/verify', protect, verifyDocumentData);
+// OCR endpoints should be usable during registration without requiring an existing auth token.
+// The upload itself is anonymous for OCR checks, while verified user actions remain protected elsewhere.
+router.post('/extract', upload.single('file'), extractDocumentText);
+router.post('/verify', verifyDocumentData);
 
 module.exports = router;

@@ -14,7 +14,7 @@ services:
         value: "3000"
       - key: CORS_ORIGIN
         sync: false
-        # Exemple: https://your-frontend.onrender.com
+        # Exemple: https://job-research.onrender.com
       - key: FRONTEND_URL
         sync: false
         # Exemple: https://job-research.onrender.com
@@ -31,13 +31,10 @@ services:
         value: "bddiane_sp"
       - key: DB_SSL
         value: "false"
-        # Set to "true" only if the external MySQL server requires SSL/TLS.
       - key: JWT_SECRET
         sync: false
-        # Générer une valeur forte, par exemple avec: openssl rand -hex 32
       - key: FILE_SIGNATURE_SECRET
         sync: false
-        # Générer une valeur forte, par exemple avec: openssl rand -hex 32
       - key: LOG_LEVEL
         value: info
       - key: UPLOAD_DIR

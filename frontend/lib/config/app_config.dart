@@ -12,6 +12,20 @@ class AppConfig {
 
   /// URL API personnalisée via --dart-define=API_BASE_URL
   static const String _customBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
+  static String _normalizeBaseUrl(String baseUrl) {
+    final trimmed = baseUrl.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    if (trimmed.endsWith('/api')) {
+      return trimmed;
+    }
+    if (trimmed.endsWith('/')) {
+      return '${trimmed}api';
+    }
+    return '$trimmed/api';
+  }
   
   /// Version de l'application
   static const String appVersion = '1.0.0';
@@ -21,7 +35,7 @@ class AppConfig {
   /// Configuration du serveur selon l'environnement
   static String get baseUrl {
     if (_customBaseUrl.isNotEmpty) {
-      return _customBaseUrl;
+      return _normalizeBaseUrl(_customBaseUrl);
     }
 
     if (kIsWeb) {

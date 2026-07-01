@@ -12,7 +12,7 @@ COPY frontend/pubspec.* ./
 RUN flutter pub get
 
 COPY frontend/ ./
-RUN flutter build web --release --dart-define=APP_ENV=production
+RUN flutter clean && flutter build web --release --dart-define=APP_ENV=production --no-wasm-dry-run
 
 FROM node:18-alpine AS runtime
 WORKDIR /app/backend
@@ -24,4 +24,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "chmod +x /app/backend/scripts/render_init.sh && /app/backend/scripts/render_init.sh && node /app/backend/server.js"]

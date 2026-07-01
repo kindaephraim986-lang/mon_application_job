@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const { initializeDatabase } = require('./scripts/initialize_database');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
@@ -109,12 +110,26 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Erreur serveur interne' });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
+
+async function startServer() {
+  try {
+    if (process.env.DB_HOST) {
+      await initializeDatabase({ quiet: false });
+    }
+  } catch (error) {
+    console.warn('⚠️ Initialisation de la base MySQL non terminée:', error.message);
+  }
+
+  if (require.main === module) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
+    });
+  }
+}
 
 if (require.main === module) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
-  });
+  startServer();
 }
 
 // Export app for testing

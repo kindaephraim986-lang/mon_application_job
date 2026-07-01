@@ -10,6 +10,8 @@ router.get('/', (req, res) => {
 // GET /api/health/db — Retourne le nombre d'enregistrements clés par table
 router.get('/db', async (req, res) => {
   try {
+    await db.testConnection();
+
     const tables = [
       'utilisateurs', 'offres', 'candidatures', 'conversations',
       'messages', 'notifications', 'paiements', 'abonnements', 'candidature_paiements'
@@ -21,10 +23,10 @@ router.get('/db', async (req, res) => {
       counts[t] = rows && rows[0] ? rows[0].count : 0;
     }
 
-    res.json({ success: true, counts });
+    res.json({ success: true, connected: true, counts });
   } catch (error) {
     console.error('HEALTH.DB ERROR:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(503).json({ success: false, connected: false, message: error.message, counts: {} });
   }
 });
 

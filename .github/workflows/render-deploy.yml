@@ -16,7 +16,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.14.0
+          flutter-version: 3.44.4
 
       - name: Install frontend dependencies
         run: |
@@ -26,7 +26,8 @@ jobs:
       - name: Build Flutter web
         run: |
           cd frontend
-          flutter build web --release --dart-define=APP_ENV=production
+          flutter clean
+          flutter build web --release --dart-define=APP_ENV=production --no-wasm-dry-run
 
       - name: Verify build output
         run: |

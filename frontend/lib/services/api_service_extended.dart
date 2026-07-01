@@ -20,7 +20,9 @@ class ApiServiceExtended {
 
       final uri = Uri.parse('$baseUrl/profile-photos/upload');
       final request = http.MultipartRequest('POST', uri);
-      request.headers['Authorization'] = 'Bearer $token';
+      if (token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
       request.files.add(http.MultipartFile.fromBytes(
         'photo',
         imageBytes,
@@ -57,12 +59,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/profile-photos/current'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -87,12 +89,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/profile-photos/history?limit=$limit'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -118,12 +120,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.delete(
         Uri.parse('$baseUrl/profile-photos/$photoId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -150,12 +152,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/unread?limit=$limit'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -181,12 +183,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/all?limit=$limit&offset=$offset'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -212,12 +214,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/notifications/count'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -243,12 +245,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.put(
         Uri.parse('$baseUrl/notifications/$notificationId/read'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -273,12 +275,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.put(
         Uri.parse('$baseUrl/notifications/mark-all-read'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -302,12 +304,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.delete(
         Uri.parse('$baseUrl/notifications/$notificationId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -331,12 +333,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.delete(
         Uri.parse('$baseUrl/notifications/delete-read'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -366,12 +368,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.post(
         Uri.parse('$baseUrl/files/generate-signed-url'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: jsonEncode({
           'documentId': documentId,
           'documentType': documentType,
@@ -414,12 +416,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final authToken = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (authToken.isNotEmpty) headers['Authorization'] = 'Bearer $authToken';
+
       final response = await http.get(
         Uri.parse('$baseUrl/files/document-info/$token'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -444,12 +446,12 @@ class ApiServiceExtended {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
 
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
+
       final response = await http.get(
         Uri.parse('$baseUrl/files/access-logs/$candidatId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {

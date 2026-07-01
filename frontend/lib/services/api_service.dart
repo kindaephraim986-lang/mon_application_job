@@ -260,7 +260,7 @@ class ApiService {
       final headers = {
         'Content-Type': 'application/json'
       };
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
 
@@ -292,7 +292,7 @@ class ApiService {
     try {
       final token = await _getToken();
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/ocr/extract'));
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
       request.files.add(http.MultipartFile.fromBytes(
@@ -794,7 +794,7 @@ class ApiService {
 
       if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $filePath');
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
@@ -821,7 +821,7 @@ class ApiService {
 
       if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload file: $fileName');
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
       request.files.add(http.MultipartFile.fromBytes(
@@ -1097,7 +1097,11 @@ class ApiService {
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(AppConfig.tokenKey);
+    final token = prefs.getString(AppConfig.tokenKey);
+    if (token == null || token.trim().isEmpty) {
+      return null;
+    }
+    return token;
   }
 
   // Wrappers for extended API methods (defined in api_service_extended.dart)
