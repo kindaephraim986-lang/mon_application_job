@@ -17,6 +17,19 @@ function getDatabaseConfig() {
     config.ssl = { rejectUnauthorized: false };
   }
 
+  if (process.env.NODE_ENV === 'production') {
+    const missing = [];
+    if (!process.env.DB_HOST) missing.push('DB_HOST');
+    if (!process.env.DB_USER) missing.push('DB_USER');
+    if (!process.env.DB_NAME) missing.push('DB_NAME');
+    if (missing.length > 0) {
+      throw new Error(
+        `MySQL environment variables required in production: ${missing.join(', ')}. ` +
+        'Set them in Render service environment variables or render.yaml with sync=false.'
+      );
+    }
+  }
+
   return config;
 }
 
