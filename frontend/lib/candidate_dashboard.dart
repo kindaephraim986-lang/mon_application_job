@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
@@ -218,17 +219,41 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   }
 
   bool _isValidCNIBImage(Uint8List bytes) {
-    // Vérifier que c'est une vrai image
+    // Vérifier que c'est une vraie image
     if (!_isValidImageBytes(bytes)) return false;
-    
+
     // Vérifier la taille approximative (CNIB en photo n'est pas énorme)
     // Entre 50KB et 10MB raisonnable
     final sizeInKB = bytes.lengthInBytes / 1024;
     if (sizeInKB < 50 || sizeInKB > 10000) {
       return false;
     }
-    
+
     return true;
+  }
+
+  Future<bool> _isLikelyCnibImage(Uint8List bytes, String fileName) async {
+    final lowerName = fileName.toLowerCase();
+    final hasCnibKeyword = ['cnib', 'cni', 'identité', 'identite', 'carte', 'recto', 'verso', 'national']
+        .any(lowerName.contains);
+
+    if (!hasCnibKeyword) {
+      return false;
+    }
+
+    if (!_isValidCNIBImage(bytes)) {
+      return false;
+    }
+
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final aspectRatio = image.width / image.height;
+      return aspectRatio >= 1.15 && aspectRatio <= 2.2;
+    } catch (_) {
+      return false;
+    }
   }
 
   bool _isValidCvBytes(Uint8List bytes, String ext) {
@@ -266,7 +291,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
 
   Future<void> _importCV() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validCvExtensions,
         withData: true,
@@ -484,6 +509,115 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               child: Image.memory(imageBytes, fit: BoxFit.contain),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCnibUploadSection() {
+    final bool loadedRecto = _cnibRectoBytes != null;
+    final bool loadedVerso = _cnibVersoBytes != null;
+    final bool hasBothFaces = loadedRecto && loadedVerso;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: hasBothFaces ? Colors.green : const Color(0xFF333333), width: 1.5),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'CNIB (Recto & Verso)',
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (hasBothFaces) const Icon(Icons.check_circle, color: Colors.green),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Importer les deux faces ensemble pour une validation complète.',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCnibFaceTile(
+                  title: _cnibRectoFileName.isEmpty ? 'Recto' : _cnibRectoFileName,
+                  subtitle: loadedRecto ? 'Chargé' : 'Importer le recto',
+                  isLoaded: loadedRecto,
+                  onPressed: _pickCNIBRecto,
+                  onPreview: loadedRecto ? () => _showImageDialog(_cnibRectoBytes!) : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCnibFaceTile(
+                  title: _cnibVersoFileName.isEmpty ? 'Verso' : _cnibVersoFileName,
+                  subtitle: loadedVerso ? 'Chargé' : 'Importer le verso',
+                  isLoaded: loadedVerso,
+                  onPressed: _pickCNIBVerso,
+                  onPreview: loadedVerso ? () => _showImageDialog(_cnibVersoBytes!) : null,
+                ),
+              ),
+            ],
+          ),
+          if (_cnibRectoFileName.isNotEmpty || _cnibVersoFileName.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Recto : ${_cnibRectoFileName.isEmpty ? 'Non chargé' : _cnibRectoFileName}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            Text(
+              'Verso : ${_cnibVersoFileName.isEmpty ? 'Non chargé' : _cnibVersoFileName}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCnibFaceTile({
+    required String title,
+    required String subtitle,
+    required bool isLoaded,
+    required VoidCallback onPressed,
+    VoidCallback? onPreview,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isLoaded ? Colors.green : const Color(0xFF333333), width: 1.3),
+      ),
+      child: ListTile(
+        title: Text(
+          title,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: isLoaded ? Colors.green : Colors.white, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (onPreview != null)
+              IconButton(
+                icon: const Icon(Icons.visibility, color: Colors.blue),
+                tooltip: 'Voir',
+                onPressed: onPreview,
+              ),
+            TextButton(
+              onPressed: onPressed,
+              child: Text(isLoaded ? 'Modifier' : 'Importer'),
+            ),
+          ],
         ),
       ),
     );
@@ -901,58 +1035,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                     child: Text("✓ CV chargé", style: TextStyle(color: Colors.green, fontSize: 12)),
                   ),
                   const Divider(height: 20),
-                  const Text("CNIB (Recto / Verso)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _pickCNIBRecto,
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text("Importer recto"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700]),
-                      ),
-                      const SizedBox(width: 12),
-                      if (_cnibRectoFileName.isNotEmpty)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: _cnibRectoBytes != null ? () => _showImageDialog(_cnibRectoBytes!) : null,
-                            child: Text(
-                              _cnibRectoFileName,
-                              style: const TextStyle(fontSize: 14, color: Colors.green, decoration: TextDecoration.underline),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _pickCNIBVerso,
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text("Importer verso"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700]),
-                      ),
-                      const SizedBox(width: 12),
-                      if (_cnibVersoFileName.isNotEmpty)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: _cnibVersoBytes != null ? () => _showImageDialog(_cnibVersoBytes!) : null,
-                            child: Text(
-                              _cnibVersoFileName,
-                              style: const TextStyle(fontSize: 14, color: Colors.green, decoration: TextDecoration.underline),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (_cnibRectoBytes != null || _cnibVersoBytes != null)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8.0),
-                      child: Text("✓ CNIB chargée (cliquer sur le nom pour visualiser)", style: TextStyle(color: Colors.green, fontSize: 12)),
-                    ),
+                  _buildCnibUploadSection(),
                 ],
               ),
             ),
@@ -1901,7 +1984,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCV() async {
     final localContext = context;
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validCvExtensions,
         withData: true,
@@ -1957,7 +2040,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCNIBRecto() async {
     final localContext = context;
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validImageExtensions,
         withData: true,
@@ -2013,7 +2096,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
   Future<void> _pickCNIBVerso() async {
     final localContext = context;
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _validImageExtensions,
         withData: true,

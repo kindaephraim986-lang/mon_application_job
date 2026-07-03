@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'candidate_dashboard.dart';
 import './company_dashboard_impl.dart';
@@ -372,23 +373,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             onPressed: _pickRegisterCV,
           ),
           const SizedBox(height: 12),
-          _buildDocumentPicker(
-            title: _registerCnibRectoFileName.isEmpty ? "CNIB - Recto" : _registerCnibRectoFileName,
-            subtitle: "Image JPG ou PNG",
-            icon: Icons.credit_card,
-            isLoaded: _registerCnibRectoBytes != null,
-            onPressed: () => _pickRegisterCNIB(isRecto: true),
-          ),
+          _buildCnibPickerSection(),
           _buildOcrStatus(),
           _buildOcrExtractedFields(),
-          const SizedBox(height: 12),
-          _buildDocumentPicker(
-            title: _registerCnibVersoFileName.isEmpty ? "CNIB - Verso" : _registerCnibVersoFileName,
-            subtitle: "Image JPG ou PNG",
-            icon: Icons.credit_card_outlined,
-            isLoaded: _registerCnibVersoBytes != null,
-            onPressed: () => _pickRegisterCNIB(isRecto: false),
-          ),
         ] else ...[
           _buildInputField(
             controller: _societeController,
@@ -492,12 +479,105 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          isLoaded ? "Fichier chargÃ©" : subtitle,
+          isLoaded ? "Fichier chargé" : subtitle,
           style: TextStyle(color: isLoaded ? Colors.green : Colors.white54, fontSize: 12),
         ),
         trailing: TextButton(
           onPressed: onPressed,
           child: Text(isLoaded ? "Modifier" : "Importer"),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCnibPickerSection() {
+    final bool hasBothFaces = _registerCnibRectoBytes != null && _registerCnibVersoBytes != null;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: hasBothFaces ? Colors.green : const Color(0xFF333333), width: 1.5),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'CNIB (Recto & Verso)',
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (hasBothFaces) const Icon(Icons.check_circle, color: Colors.green),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Importer les deux faces ensemble. Le recto est vérifié par OCR.',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCnibFaceTile(
+                  title: _registerCnibRectoFileName.isEmpty ? 'Recto' : _registerCnibRectoFileName,
+                  subtitle: _registerCnibRectoBytes != null ? 'Chargé' : 'Importer le recto',
+                  isLoaded: _registerCnibRectoBytes != null,
+                  onPressed: () => _pickRegisterCNIB(isRecto: true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCnibFaceTile(
+                  title: _registerCnibVersoFileName.isEmpty ? 'Verso' : _registerCnibVersoFileName,
+                  subtitle: _registerCnibVersoBytes != null ? 'Chargé' : 'Importer le verso',
+                  isLoaded: _registerCnibVersoBytes != null,
+                  onPressed: () => _pickRegisterCNIB(isRecto: false),
+                ),
+              ),
+            ],
+          ),
+          if (_registerCnibRectoFileName.isNotEmpty || _registerCnibVersoFileName.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Recto : ${_registerCnibRectoFileName.isEmpty ? 'Non chargé' : _registerCnibRectoFileName}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            Text(
+              'Verso : ${_registerCnibVersoFileName.isEmpty ? 'Non chargé' : _registerCnibVersoFileName}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCnibFaceTile({
+    required String title,
+    required String subtitle,
+    required bool isLoaded,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isLoaded ? Colors.green : const Color(0xFF333333), width: 1.3),
+      ),
+      child: ListTile(
+        title: Text(
+          title,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: isLoaded ? Colors.green : Colors.white, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        trailing: TextButton(
+          onPressed: onPressed,
+          child: Text(isLoaded ? 'Modifier' : 'Importer'),
         ),
       ),
     );
@@ -511,7 +591,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _pickRegisterCV() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: _validCvExtensions,
       withData: true,
@@ -532,8 +612,32 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     });
   }
 
+  Future<bool> _isLikelyCnibImage(Uint8List bytes, String fileName) async {
+    final lowerName = fileName.toLowerCase();
+    final hasCnibKeyword = ['cnib', 'cni', 'identité', 'identite', 'carte', 'recto', 'verso', 'national']
+        .any(lowerName.contains);
+
+    if (!hasCnibKeyword) {
+      return false;
+    }
+
+    if (bytes.lengthInBytes < 50 * 1024) {
+      return false;
+    }
+
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final aspectRatio = image.width / image.height;
+      return aspectRatio >= 1.15 && aspectRatio <= 2.2;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _pickRegisterCNIB({required bool isRecto}) async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: _validImageExtensions,
       withData: true,
@@ -548,6 +652,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       );
       return;
     }
+
+    final looksLikeCnib = await _isLikelyCnibImage(file.bytes!, file.name);
+    if (!looksLikeCnib) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Veuillez sélectionner une image de CNIB (recto ou verso)."), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
     setState(() {
       if (isRecto) {
         _registerCnibRectoBytes = file.bytes;
@@ -1003,7 +1117,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             MaterialPageRoute(
               builder: (context) => userType == 'entreprise'
                   ? CompanyDashboard(initialData: userData)
-                  : ProfileConfirmationScreen(userData: userData),
+                  : CandidateDashboard(initialData: userData),
             ),
           );
         } else {

@@ -199,7 +199,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   }
 
   Future<void> _pickLogo() async {
-    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.image);
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null) {
       final bytes = result.files.first.bytes;
       final name = result.files.first.name;
