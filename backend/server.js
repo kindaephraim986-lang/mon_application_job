@@ -113,12 +113,18 @@ app.use((err, req, res, next) => {
 const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
 
 async function startServer() {
+  if (process.env.NODE_ENV === 'production' && !process.env.DB_HOST) {
+    console.error('❌ DB_HOST is required in production. Set DB_HOST in Render service environment variables or render.yaml with sync=false.');
+    process.exit(1);
+  }
+
   try {
     if (process.env.DB_HOST) {
       await initializeDatabase({ quiet: false });
     }
   } catch (error) {
-    console.warn('⚠️ Initialisation de la base MySQL non terminée:', error.message);
+    console.error('❌ Initialisation de la base MySQL impossible:', error.message);
+    process.exit(1);
   }
 
   if (require.main === module) {
