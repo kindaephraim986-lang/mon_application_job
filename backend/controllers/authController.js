@@ -5,11 +5,11 @@ const path = require('path');
 const db = require('../config/database');
 
 const usersFile = path.join(__dirname, '../data/users.json');
-const ADMIN_EMAIL = 'kinda@admin.com';
+const ADMIN_EMAIL = 'kindaephraim986@gmail.com';
 
 const normalizeLoginEmail = (email = '') => {
     const normalized = email.trim().toLowerCase();
-    if (normalized === 'kinda' || normalized === 'admin' || normalized === 'kinda@admin.com') {
+    if (normalized === 'kindaephraim986@gmail.com' || normalized === 'kinda' || normalized === 'admin') {
         return ADMIN_EMAIL;
     }
     return normalized;
@@ -78,6 +78,11 @@ const register = async (req, res) => {
             return res.status(400).json({ message: 'Email, mot de passe et type requis' });
         }
 
+        // Vérifier que seul kindaephraim986@gmail.com peut être admin
+        if (userType === 'admin' && email.trim().toLowerCase() !== 'kindaephraim986@gmail.com') {
+            return res.status(403).json({ message: 'Seul kindaephraim986@gmail.com peut s\'enregistrer comme administrateur' });
+        }
+
         // Normaliser l'email pour cohérence
         const normalizedEmail = normalizeLoginEmail(email);
 
@@ -135,7 +140,7 @@ const register = async (req, res) => {
             id: userId,
             email: normalizedEmail,
             userType,
-            nom: userType === 'candidat' ? nom : nomEntreprise,
+            nom: userType === 'candidat' || userType === 'admin' ? nom : nomEntreprise,
             telephone: telephone || '',
             filiere: userType === 'candidat' ? filiere || '' : '',
             domaine: userType === 'entreprise' ? domaine || '' : '',

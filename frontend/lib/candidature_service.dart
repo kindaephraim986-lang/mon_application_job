@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 class Candidature {
   final String id;
@@ -39,8 +39,9 @@ class CandidatureService {
 
   final List<Candidature> _candidatures = [];
   
-  // Centralisation des offres partagées (List modifiable)
-  final List<Map<String, dynamic>> offresGlobales = [
+  // Centralisation des offres partagées (ValueNotifier pour notifications)
+  final offresGlobalesNotifier =
+      ValueNotifier<List<Map<String, dynamic>>>([
     {
       'id': '1',
       'typeContrat': 'Stage',
@@ -67,7 +68,29 @@ class CandidatureService {
       'logoBytes': null,
       'entreprise': 'Innov Faso',
     }
-  ];
+  ]);
+
+  List<Map<String, dynamic>> get offresGlobales => offresGlobalesNotifier.value;
+
+  void addOffer(Map<String, dynamic> offre) {
+    final newList = List<Map<String, dynamic>>.from(offresGlobalesNotifier.value);
+    newList.add(offre);
+    offresGlobalesNotifier.value = newList;
+  }
+
+  void replaceOffers(List<Map<String, dynamic>> offres) {
+    offresGlobalesNotifier.value = List<Map<String, dynamic>>.from(offres);
+  }
+
+  void clearOffers() {
+    offresGlobalesNotifier.value = [];
+  }
+
+  void removeOfferById(String id) {
+    final newList = List<Map<String, dynamic>>.from(offresGlobalesNotifier.value);
+    newList.removeWhere((o) => o['id'] == id);
+    offresGlobalesNotifier.value = newList;
+  }
 
   List<Candidature> getCandidaturesForCandidate(String email) {
     return _candidatures.where((c) => c.candidatEmail == email).toList();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/api_service.dart';
+import 'auth_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -115,9 +116,16 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   }
 
   Future<void> _logout() async {
+    // Effacer la session
     await ApiService.logout();
+    
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    
+    // Naviguer vers l'écran d'authentification et effacer l'historique
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -137,10 +145,6 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             Tab(icon: Icon(Icons.payment), text: 'Paiements'),
           ],
         ),
-        actions: [
-          IconButton(onPressed: _loadAllData, icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -177,6 +181,20 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               _buildStatCard('Candidatures', _stats['totalApplications']?.toString() ?? '0', Icons.assignment, Colors.green),
               _buildStatCard('Paiements', _stats['totalPayments']?.toString() ?? '0', Icons.payment, Colors.purple),
             ],
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
+              label: const Text('Se déconnecter'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
         ],
       ),

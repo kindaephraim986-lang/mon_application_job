@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:typed_data';
 import 'notification_service.dart';
@@ -10,6 +9,7 @@ import 'payment_service.dart';
 import 'subscription_service.dart';
 import 'services/api_service.dart';
 import 'services/file_actions.dart';
+import 'auth_screen.dart';
 
 class CompanyDashboard extends StatefulWidget {
   final Map<String, String> initialData;
@@ -45,8 +45,6 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   final _salaireController = TextEditingController();
 
   String _selectedTypeContrat = 'CDI';
-  Uint8List? _logoBytes;
-  String _logoFileName = '';
 
   @override
   void initState() {
@@ -68,7 +66,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("âš ï¸ Vous n'avez pas d'abonnement actif"),
+            content: Text("⚠️ Vous n'avez pas d'abonnement actif"),
             backgroundColor: Colors.orange,
           ),
         );
@@ -77,7 +75,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("âš ï¸ Votre abonnement expire dans $remainingDays jours"),
+            content: Text("⚠️ Votre abonnement expire dans $remainingDays jours"),
             backgroundColor: Colors.orange,
           ),
         );
@@ -141,8 +139,8 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('AperÃ§u non supportÃ©'),
-          content: const Text('Seul le format PDF peut Ãªtre visualisÃ© directement dans l\'application. Pour DOC/DOCX, utilisez le bouton TÃ©lÃ©charger.'),
+          title: const Text('Aperçu non supporté'),
+          content: const Text('Seul le format PDF peut être visualisé directement dans l\'application. Pour DOC/DOCX, utilisez le bouton Télécharger.'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
           ],
@@ -164,7 +162,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     if (filePath == null) {
       if (!localContext.mounted) return;
       ScaffoldMessenger.of(localContext).showSnackBar(
-        const SnackBar(content: Text("Impossible de prÃ©parer l'aperÃ§u du CV")),
+        const SnackBar(content: Text("Impossible de préparer l'aperçu du CV")),
       );
       return;
     }
@@ -179,7 +177,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           height: MediaQuery.of(context).size.height * 0.9,
           child: Scaffold(
             appBar: AppBar(
-              title: const Text('AperÃ§u du CV'),
+              title: const Text('Aperçu du CV'),
               backgroundColor: Colors.blue[900],
               actions: [
                 IconButton(
@@ -196,18 +194,6 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         ),
       ),
     );
-  }
-
-  Future<void> _pickLogo() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null) {
-      final bytes = result.files.first.bytes;
-      final name = result.files.first.name;
-      setState(() {
-        _logoBytes = bytes;
-        _logoFileName = name;
-      });
-    }
   }
 
   void _publierOffre() async {
@@ -256,11 +242,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         'experience': _experienceController.text,
         'lieu': _lieuController.text,
         'salaire': _salaireController.text,
-        'logoBytes': _logoBytes,
+        'logoBytes': null,
         'entreprise': _companyName,
       };
       setState(() {
-        CandidatureService().offresGlobales.add(newOffre);
+        CandidatureService().addOffer(newOffre);
         _posteController.clear();
         _descriptionController.clear();
         _competencesController.clear();
@@ -268,8 +254,6 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         _experienceController.clear();
         _lieuController.clear();
         _salaireController.clear();
-        _logoBytes = null;
-        _logoFileName = '';
         _selectedIndex = 2;
       });
       NotificationService.notifyCandidate("Nouvelle offre: ${newOffre['titre']} chez $_companyName");
@@ -289,11 +273,10 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           'logoBytes': null,
           'entreprise': o['nom_societe'] ?? o['entreprise'] ?? '',
         }).toList();
-        CandidatureService().offresGlobales.clear();
-        CandidatureService().offresGlobales.addAll(mapped);
+        CandidatureService().replaceOffers(mapped);
       } catch (_) {}
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offre publiÃ©e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offre publiée')));
       }
     } else {
       // fallback: add locally and show warning
@@ -307,11 +290,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         'experience': _experienceController.text,
         'lieu': _lieuController.text,
         'salaire': _salaireController.text,
-        'logoBytes': _logoBytes,
+        'logoBytes': null,
         'entreprise': _companyName,
       };
       setState(() {
-        CandidatureService().offresGlobales.add(newOffre);
+        CandidatureService().addOffer(newOffre);
         _posteController.clear();
         _descriptionController.clear();
         _competencesController.clear();
@@ -319,8 +302,6 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         _experienceController.clear();
         _lieuController.clear();
         _salaireController.clear();
-        _logoBytes = null;
-        _logoFileName = '';
         _selectedIndex = 2;
       });
       // attempt to refresh offers from backend (best-effort)
@@ -339,11 +320,10 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           'logoBytes': null,
           'entreprise': o['nom_societe'] ?? o['entreprise'] ?? '',
         }).toList();
-        CandidatureService().offresGlobales.clear();
-        CandidatureService().offresGlobales.addAll(mapped);
+        CandidatureService().replaceOffers(mapped);
       } catch (_) {}
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offre ajoutÃ©e localement (${resp['message'] ?? 'erreur backend'})')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Offre ajoutée localement (${resp['message'] ?? 'erreur backend'})')));
       }
     }
   }
@@ -357,14 +337,14 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
           TextButton(
-            onPressed: () {
+                onPressed: () {
               setState(() {
-                CandidatureService().offresGlobales.removeWhere((o) => o['id'] == id);
+                CandidatureService().removeOfferById(id);
               });
               Navigator.pop(context);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Offre supprimÃ©e avec succÃ¨s")),
+                  const SnackBar(content: Text("Offre supprimée avec succès")),
                 );
               }
             },
@@ -377,7 +357,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
 
   void _gererCandidature(String candidatureId, String nouveauStatut, String candidatEmail, String offreTitre) {
     CandidatureService().updateStatut(candidatureId, nouveauStatut);
-    NotificationService.notifyCandidate("Votre candidature pour l'offre $offreTitre a Ã©tÃ© $nouveauStatut");
+    NotificationService.notifyCandidate("Votre candidature pour l'offre $offreTitre a été $nouveauStatut");
     setState(() {});
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -432,7 +412,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   }
 
   String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year} Ã  ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+    return "${date.day}/${date.month}/${date.year} à ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
   }
 
   Future<void> _downloadFile(Uint8List bytes, String suggestedName) async {
@@ -453,6 +433,20 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       }
     }
   }
+
+  Future<void> _logout() async {
+    // Effacer la session
+    await ApiService.logout();
+    
+    if (!mounted) return;
+    
+    // Naviguer vers l'écran d'authentification et effacer l'historique
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -474,7 +468,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                     textAlign: TextAlign.center,
                   ),
                   Text(
-                    entrepriseData['domaine'] ?? 'Domaine non spÃ©cifiÃ©',
+                    entrepriseData['domaine'] ?? 'Domaine non spécifié',
                     style: TextStyle(color: Colors.blue[100], fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
@@ -487,7 +481,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                         _buildMenuItem(10, Icons.payment, "Abonnement"),
                         _buildMenuItem(1, Icons.add_box, "Publier une Offre"),
                         _buildMenuItem(2, Icons.list, "Mes Annonces"),
-                        _buildMenuItem(7, Icons.people, "Candidatures reÃ§ues"),
+                        _buildMenuItem(7, Icons.people, "Candidatures reçues"),
                         _buildMenuItem(8, Icons.lightbulb, "Conseils"),
                         _buildMenuItem(9, Icons.contact_mail, "Contact"),
                         _buildMenuItem(4, Icons.chat, "Messages Candidats", count: _unreadMessagesCount),
@@ -519,8 +513,8 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text("DÃ©connexion", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        onPressed: () => Navigator.pop(context),
+                        label: const Text("Déconnexion", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        onPressed: _logout,
                       ),
                     ),
                   ),
@@ -631,18 +625,18 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                       future: _companyEmail.isNotEmpty ? SubscriptionService.getRemainingDaysForCompany(_companyEmail) : Future.value(0),
                       builder: (context, snapshot) {
                         final days = snapshot.data ?? 0;
-                        return Text("ðŸ“… Jours restants : $days jours");
+                        return Text("⏳ Jours restants : $days jours");
                       },
                     ),
-                    const Text("âœ… Publication d'offres illimitÃ©e"),
-                    const Text("âœ… Gestion des candidatures"),
+                    const Text("✓ Publication d'offres illimitée"),
+                    const Text("✓ Gestion des candidatures"),
                   ] else ...[
-                    const Text("âš ï¸ Abonnement requis pour publier des offres"),
-                    const Text("ðŸ’¡ Abonnement mensuel Ã  2000 FCFA"),
+                    const Text("⚠️ Abonnement requis pour publier des offres"),
+                    const Text("💳 Abonnement mensuel à 2000 FCFA"),
                   ],
                   const SizedBox(height: 8),
                   Text(
-                    "ðŸ”§ Mode simulation - Aucun paiement rÃ©el",
+                    "⚠️ Mode simulation - Aucun paiement réel",
                     style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                   ),
                 ],
@@ -675,14 +669,14 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("Abonnement rÃ©initialisÃ© pour test"),
+                      content: Text("Abonnement réinitialisé pour test"),
                       backgroundColor: Colors.orange,
                     ),
                   );
                 }
               },
               icon: const Icon(Icons.refresh),
-              label: const Text("RÃ©initialiser l'abonnement (test)"),
+              label: const Text("Réinitialiser l'abonnement (test)"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -694,7 +688,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     );
   }
 
-  // ================== CANDIDATURES REÃ‡UES (AVEC BOUTON CONTACTER) ==================
+  // ================== CANDIDATURES REÇUES (AVEC BOUTON CONTACTER) ==================
   Widget _buildCandidaturesRecues() {
     final candidatures = CandidatureService().getCandidaturesForCompany(_companyName);
 
@@ -729,7 +723,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     }
 
     if (candidatures.isEmpty) {
-      return const Center(child: Text("Aucune candidature reÃ§ue pour le moment."));
+      return const Center(child: Text("Aucune candidature reçue pour le moment."));
     }
 
     return ListView.builder(
@@ -747,8 +741,8 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                 const SizedBox(height: 8),
                 Text("Candidat: ${c.candidatNom}"),
                 Text("Email: ${c.candidatEmailContact}"),
-                Text("TÃ©lÃ©phone: ${c.candidatTel}"),
-                Text("PostulÃ© le: ${_formatDate(c.datePostulation)}"),
+                Text("Téléphone: ${c.candidatTel}"),
+                Text("Postulé le: ${_formatDate(c.datePostulation)}"),
                 const Divider(height: 20),
                 const Text("Documents joints", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
@@ -809,7 +803,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                                   IconButton(
                                     icon: const Icon(Icons.download, color: Colors.green),
                                     onPressed: () => _downloadFile(c.cvBytes!, "CV_${c.candidatNom.replaceAll(' ', '_')}.pdf"),
-                                    tooltip: "TÃ©lÃ©charger",
+                                    tooltip: "Télécharger",
                                   ),
                                 ],
                               ),
@@ -893,7 +887,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                                   IconButton(
                                     icon: const Icon(Icons.download, color: Colors.green),
                                     onPressed: () => _downloadFile(c.cnibRectoBytes!, "CNIB_Recto_${c.candidatNom.replaceAll(' ', '_')}.jpg"),
-                                    tooltip: "TÃ©lÃ©charger",
+                                    tooltip: "Télécharger",
                                   ),
                                 ],
                               ),
@@ -977,7 +971,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                                   IconButton(
                                     icon: const Icon(Icons.download, color: Colors.green),
                                     onPressed: () => _downloadFile(c.cnibVersoBytes!, "CNIB_Verso_${c.candidatNom.replaceAll(' ', '_')}.jpg"),
-                                    tooltip: "TÃ©lÃ©charger",
+                                    tooltip: "Télécharger",
                                   ),
                                 ],
                               ),
@@ -1061,7 +1055,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                                   IconButton(
                                     icon: const Icon(Icons.download, color: Colors.green),
                                     onPressed: () => _downloadFile(c.photoBytes!, "Photo_${c.candidatNom.replaceAll(' ', '_')}.jpg"),
-                                    tooltip: "TÃ©lÃ©charger",
+                                    tooltip: "Télécharger",
                                   ),
                                 ],
                               ),
@@ -1079,18 +1073,18 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                   children: [
                     if (c.statut == "En cours") ...[
                       ElevatedButton(
-                        onPressed: () => _gererCandidature(c.id, "AcceptÃ©e", c.candidatEmail, c.offreTitre),
+                        onPressed: () => _gererCandidature(c.id, "Acceptée", c.candidatEmail, c.offreTitre),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                         child: const Text("Accepter"),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(
-                        onPressed: () => _gererCandidature(c.id, "RefusÃ©e", c.candidatEmail, c.offreTitre),
+                        onPressed: () => _gererCandidature(c.id, "Refusée", c.candidatEmail, c.offreTitre),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                         child: const Text("Refuser"),
                       ),
-                    ] else if (c.statut == "AcceptÃ©e") ...[
-                      // BOUTON CONTACTER POUR LES OFFRES ACCEPTÃ‰ES
+                    ] else if (c.statut == "Acceptée") ...[
+                      // BOUTON CONTACTER POUR LES OFFRES ACCEPTÉES
                       ElevatedButton.icon(
                         onPressed: () {
                           _contacterCandidat(c);
@@ -1149,29 +1143,29 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "ðŸ“˜ Nos conseils pour recruter efficacement",
+            "💡 Nos conseils pour recruter efficacement",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900]),
           ),
           const SizedBox(height: 20),
           _buildConseilTile(
             numero: "1.",
-            titre: "RÃ©digez des offres claires et attractives",
-            texte: "Un titre prÃ©cis, une description dÃ©taillÃ©e des missions, des compÃ©tences requises et des avantages. Ã‰vitez les jargons internes.",
+            titre: "Rédigez des offres claires et attractives",
+            texte: "Un titre précis, une description détaillée des missions, des compétences requises et des avantages. Évitez les jargons internes.",
           ),
           _buildConseilTile(
             numero: "2.",
             titre: "Validez rapidement les candidatures",
-            texte: "Les candidats attendent une rÃ©ponse. Un accusÃ© de rÃ©ception automatique, puis un retour sous 5 Ã  7 jours. Cela amÃ©liore votre image employeur.",
+            texte: "Les candidats attendent une réponse. Un accusé de réception automatique, puis un retour sous 5 à 7 jours. Cela améliore votre image employeur.",
           ),
           _buildConseilTile(
             numero: "3.",
             titre: "Utilisez les documents fournis",
-            texte: "Consultez le CV et la CNIB pour vÃ©rifier lâ€™identitÃ© et les compÃ©tences. Notre plateforme vous permet de visualiser les images instantanÃ©ment.",
+            texte: "Consultez le CV et la CNIB pour vérifier l'identité et les compétences. Notre plateforme vous permet de visualiser les images instantanément.",
           ),
           _buildConseilTile(
             numero: "4.",
             titre: "Communiquez via le chat",
-            texte: "Le chat intÃ©grÃ© permet dâ€™Ã©changer directement avec les candidats pour des questions rapides ou une prÃ©-sÃ©lection.",
+            texte: "Le chat intégré permet d'échanger directement avec les candidats pour des questions rapides ou une pré-sélection.",
           ),
         ],
       ),
@@ -1216,7 +1210,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           ),
           const SizedBox(height: 12),
           Text(
-            "Nous sommes disponibles pour rÃ©pondre Ã  vos questions, accompagner vos recrutements ou vous aider dans votre recherche d'emploi.",
+            "Nous sommes disponibles pour répondre à vos questions, accompagner vos recrutements ou vous aider dans votre recherche d'emploi.",
             style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.4),
           ),
           const SizedBox(height: 30),
@@ -1239,7 +1233,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("SiÃ¨ge social", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+                        Text("Siège social", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue[900])),
                         const SizedBox(height: 4),
                         Text("Burkina Faso, Bobo-Dioulasso\nSecteur 10", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
                       ],
@@ -1320,14 +1314,14 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Informations de la SociÃ©tÃ©", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+            Text("Informations de la Société", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
             const Divider(height: 30),
-            _buildProfileRow("Nom de l'entreprise", entrepriseData['nom_societe'] ?? entrepriseData['nom'] ?? 'Non spÃ©cifiÃ©'),
-            _buildProfileRow("Secteur / Domaine", entrepriseData['domaine'] ?? 'Non spÃ©cifiÃ©'),
-            _buildProfileRow("TÃ©lÃ©phone", entrepriseData['telephone'] ?? 'Non spÃ©cifiÃ©'),
-            _buildProfileRow("Email Professionnel", entrepriseData['email'] ?? 'Non spÃ©cifiÃ©'),
-            _buildProfileRow("Ville / Lieu", entrepriseData['villeLieu']?.isNotEmpty == true ? entrepriseData['villeLieu']! : entrepriseData['adresse']?.isNotEmpty == true ? entrepriseData['adresse']! : 'Non spÃ©cifiÃ©'),
-            _buildProfileRow("Adresse complÃ¨te", entrepriseData['adresse']?.isNotEmpty == true ? entrepriseData['adresse']! : entrepriseData['villeLieu']?.isNotEmpty == true ? entrepriseData['villeLieu']! : 'Non spÃ©cifiÃ©'),
+            _buildProfileRow("Nom de l'entreprise", entrepriseData['nom_societe'] ?? entrepriseData['nom'] ?? 'Non spécifié'),
+            _buildProfileRow("Secteur / Domaine", entrepriseData['domaine'] ?? 'Non spécifié'),
+            _buildProfileRow("Téléphone", entrepriseData['telephone'] ?? 'Non spécifié'),
+            _buildProfileRow("Email Professionnel", entrepriseData['email'] ?? 'Non spécifié'),
+            _buildProfileRow("Ville / Lieu", entrepriseData['villeLieu']?.isNotEmpty == true ? entrepriseData['villeLieu']! : entrepriseData['adresse']?.isNotEmpty == true ? entrepriseData['adresse']! : 'Non spécifié'),
+            _buildProfileRow("Adresse complète", entrepriseData['adresse']?.isNotEmpty == true ? entrepriseData['adresse']! : entrepriseData['villeLieu']?.isNotEmpty == true ? entrepriseData['villeLieu']! : 'Non spécifié'),
           ],
         ),
       ),
@@ -1352,44 +1346,23 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("CrÃ©er et publier une nouvelle offre", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+          Text("Créer et publier une nouvelle offre", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
           const SizedBox(height: 20),
           TextFormField(
             initialValue: entrepriseData['nom_societe'],
             readOnly: true,
             decoration: const InputDecoration(labelText: "Nom de l'entreprise", border: OutlineInputBorder()),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _pickLogo,
-                icon: const Icon(Icons.upload_file),
-                label: Text(_logoFileName.isEmpty ? "Importer le logo" : _logoFileName),
-              ),
-              const SizedBox(width: 12),
-              if (_logoBytes != null)
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Image.memory(_logoBytes!),
-                ),
-            ],
-          ),
           const SizedBox(height: 16),
           TextField(controller: _posteController, decoration: const InputDecoration(labelText: "Titre du poste *")),
           const SizedBox(height: 12),
           TextField(controller: _descriptionController, maxLines: 4, decoration: const InputDecoration(labelText: "Description du poste")),
           const SizedBox(height: 12),
-          TextField(controller: _competencesController, decoration: const InputDecoration(labelText: "CompÃ©tences requises (sÃ©parÃ©es par des virgules)")),
+          TextField(controller: _competencesController, decoration: const InputDecoration(labelText: "Compétences requises (séparées par des virgules)")),
           const SizedBox(height: 12),
-          TextField(controller: _niveauController, decoration: const InputDecoration(labelText: "Niveau d'Ã©tude demandÃ©")),
+          TextField(controller: _niveauController, decoration: const InputDecoration(labelText: "Niveau d'étude demandé")),
           const SizedBox(height: 12),
-          TextField(controller: _experienceController, decoration: const InputDecoration(labelText: "ExpÃ©rience requise (en annÃ©es)")),
+          TextField(controller: _experienceController, decoration: const InputDecoration(labelText: "Expérience requise (en années)")),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _selectedTypeContrat,
@@ -1402,7 +1375,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
             },
           ),
           const SizedBox(height: 12),
-          TextField(controller: _lieuController, decoration: const InputDecoration(labelText: "Lieu (ville, tÃ©lÃ©travail, etc.)")),
+          TextField(controller: _lieuController, decoration: const InputDecoration(labelText: "Lieu (ville, télétravail, etc.)")),
           const SizedBox(height: 12),
           if (_selectedTypeContrat != 'Stage')
             TextField(controller: _salaireController, decoration: const InputDecoration(labelText: "Salaire (optionnel)")),
@@ -1417,18 +1390,18 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     );
   }
 
-  // ================== GÃ‰RER LES OFFRES ==================
+  // ================== GÉRER LES OFFRES ==================
   Widget _buildGererOffres() {
     final companyName = entrepriseData['nom_societe'] ?? entrepriseData['nom'] ?? 'Entreprise';
     final offresPubliees = CandidatureService().offresGlobales.where((o) => o['entreprise'] == companyName).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Vos annonces publiÃ©es", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+        Text("Vos annonces publiées", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue[900])),
         const SizedBox(height: 15),
         Expanded(
           child: offresPubliees.isEmpty
-              ? const Center(child: Text("Aucune offre publiÃ©e pour le moment."))
+              ? const Center(child: Text("Aucune offre publiée pour le moment."))
               : ListView.builder(
                   itemCount: offresPubliees.length,
                   itemBuilder: (context, index) {
@@ -1452,9 +1425,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text("Description: ${o['description']}"),
-                                Text("CompÃ©tences: ${o['competences']}"),
+                                Text("Compétences: ${o['competences']}"),
                                 Text("Niveau: ${o['niveau']}"),
-                                Text("ExpÃ©rience: ${o['experience']}"),
+                                Text("Expérience: ${o['experience']}"),
                                 if (o['salaire'] != null && o['salaire']!.isNotEmpty) Text("Salaire: ${o['salaire']}"),
                               ],
                             ),
@@ -1482,7 +1455,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
         }
         final conversations = snapshot.data ?? [];
         if (conversations.isEmpty) {
-          return const Center(child: Text("Aucun message reÃ§u de candidat pour l'instant."));
+          return const Center(child: Text("Aucun message reçu de candidat pour l'instant."));
         }
         return ListView.builder(
           itemCount: conversations.length,
@@ -1571,12 +1544,12 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Espace Recruteur â€” $_companyName ðŸš€",
+                        "Espace Recruteur — $_companyName ⚡",
                         style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Trouvez les meilleurs talents dÃ¨s aujourd'hui. Secteur d'activitÃ© rÃ©fÃ©rencÃ© : ${entrepriseData['domaine']}.",
+                        "Trouvez les meilleurs talents dès aujourd'hui. Secteur d'activité référencé : ${entrepriseData['domaine']}.",
                         style: TextStyle(color: Colors.blue[50], fontSize: 14, height: 1.4),
                       ),
                     ],
@@ -1592,7 +1565,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
             ),
           ),
           const SizedBox(height: 30),
-          Text("Vue d'ensemble de l'activitÃ©", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+          Text("Vue d'ensemble de l'activité", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue[900])),
           const SizedBox(height: 15),
           Row(
             children: [
@@ -1600,7 +1573,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
               const SizedBox(width: 15),
               _buildStatCard("Messages Candidats", "$_unreadMessagesCount", Icons.question_answer_rounded, Colors.orange),
               const SizedBox(width: 15),
-              _buildStatCard("Candidatures reÃ§ues", "${CandidatureService().getCandidaturesForCompany(_companyName).length}", Icons.people_alt_rounded, Colors.green),
+              _buildStatCard("Candidatures reçues", "${CandidatureService().getCandidaturesForCompany(_companyName).length}", Icons.people_alt_rounded, Colors.green),
             ],
           ),
           const SizedBox(height: 35),
@@ -1610,7 +1583,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
               Text("Performance de vos annonces", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue[900])),
               TextButton(
                 onPressed: () => setState(() => _selectedIndex = 2),
-                child: const Text("GÃ©rer les annonces â†’", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text("Gérer les annonces →", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -1728,7 +1701,7 @@ class _CompanyChatScreenState extends State<CompanyChatScreen> {
       setState(() {
         _controller.clear();
       });
-      NotificationService.notifyCandidate("Nouveau message de ${widget.entrepriseData['nom_societe'] ?? widget.entrepriseData['nom'] ?? 'SociÃ©tÃ©'}");
+      NotificationService.notifyCandidate("Nouveau message de ${widget.entrepriseData['nom_societe'] ?? widget.entrepriseData['nom'] ?? 'Société'}");
     }
   }
 
@@ -1768,7 +1741,7 @@ class _CompanyChatScreenState extends State<CompanyChatScreen> {
                           final msg = messages.reversed.toList()[index];
                           final isMe = msg.senderId.startsWith('entreprise');
                           final displayName = isMe
-                              ? (widget.entrepriseData['nom_societe'] ?? "SociÃ©tÃ©")
+                              ? (widget.entrepriseData['nom_societe'] ?? "Société")
                               : msg.senderName;
                           return Align(
                             alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,

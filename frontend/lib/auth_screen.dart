@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'candidate_dashboard.dart';
 import './company_dashboard_impl.dart';
-import 'profile_confirmation_screen.dart';
+import 'admin_dashboard_v2.dart';
 import 'services/api_service.dart';
 import 'services/ocr_service.dart';
 import 'utils/ocr_helpers.dart';
@@ -19,6 +19,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   bool isLogin = true;
   bool isCandidat = true;
+  bool isAdmin = false;
   String selectedSexe = 'Masculin';
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -31,6 +32,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   final _ageController = TextEditingController();
   final _domicileController = TextEditingController();
   final _passController = TextEditingController();
+
+  final _adminNomController = TextEditingController();
+  final _adminEmailController = TextEditingController();
+  final _adminPhoneController = TextEditingController();
 
   final _societeController = TextEditingController();
   final _emailSocieteController = TextEditingController();
@@ -66,6 +71,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     _ageController.dispose();
     _domicileController.dispose();
     _passController.dispose();
+    _adminNomController.dispose();
+    _adminEmailController.dispose();
+    _adminPhoneController.dispose();
     _societeController.dispose();
     _emailSocieteController.dispose();
     _domaineController.dispose();
@@ -202,31 +210,46 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(4),
       child: Row(
         children: [
-          _buildTabButton("Candidat", true),
-          _buildTabButton("Entreprise", false),
+          _buildTabButton("Candidat", isCandidatTab: true, isAdminTab: false),
+          const SizedBox(width: 8),
+          _buildTabButton("Entreprise", isCandidatTab: false, isAdminTab: false),
+          const SizedBox(width: 8),
+          _buildTabButton("Admin", isCandidatTab: false, isAdminTab: true),
         ],
       ),
     );
   }
 
-  Widget _buildTabButton(String label, bool isSelectedTab) {
+  Widget _buildTabButton(String label, {required bool isCandidatTab, required bool isAdminTab}) {
+    bool isSelected = isAdminTab ? isAdmin : (isCandidatTab ? isCandidat : !isCandidat && !isAdmin);
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => isCandidat = isSelectedTab),
+        onTap: () => setState(() {
+          if (isAdminTab) {
+            isAdmin = true;
+            isCandidat = false;
+          } else if (isCandidatTab) {
+            isAdmin = false;
+            isCandidat = true;
+          } else {
+            isAdmin = false;
+            isCandidat = false;
+          }
+        }),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: (isCandidat == isSelectedTab) ? const Color(0xFFBF360C) : Colors.transparent,
+            color: isSelected ? const Color(0xFFBF360C) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: (isCandidat == isSelectedTab) ? Colors.white : Colors.white70,
+              color: isSelected ? Colors.white : Colors.white70,
               fontWeight: FontWeight.w600,
               fontSize: 15,
             ),
@@ -272,6 +295,45 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildRegisterForm() {
+    if (isAdmin) {
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red, width: 2),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Inscription administrateur désactivée',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Créer un compte admin n’est pas autorisé. Utilisez l’onglet connexion pour vous connecter.',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         if (isCandidat) ...[
@@ -504,10 +566,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         children: [
           Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: Text(
                   'CNIB (Recto & Verso)',
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
                 ),
               ),
               if (hasBothFaces) const Icon(Icons.check_circle, color: Colors.green),
@@ -590,6 +652,41 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return lowerName.substring(dotIndex + 1);
   }
 
+  bool _isValidCvBytes(Uint8List bytes, String ext) {
+    if (bytes.lengthInBytes < 20 * 1024 || bytes.lengthInBytes > 10 * 1024 * 1024) {
+      return false;
+    }
+
+    final lowerExt = ext.toLowerCase();
+    if (lowerExt == 'pdf') {
+      return bytes.lengthInBytes > 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46;
+    }
+    if (lowerExt == 'docx') {
+      if (bytes.lengthInBytes < 4 || bytes[0] != 0x50 || bytes[1] != 0x4B || bytes[2] != 0x03 || bytes[3] != 0x04) {
+        return false;
+      }
+      final sample = String.fromCharCodes(bytes.sublist(0, bytes.lengthInBytes < 1024 ? bytes.lengthInBytes : 1024));
+      return sample.contains('word/') && sample.contains('[Content_Types].xml');
+    }
+    if (lowerExt == 'doc') {
+      return bytes.lengthInBytes > 8 && bytes[0] == 0xD0 && bytes[1] == 0xCF && bytes[2] == 0x11 && bytes[3] == 0xE0 && bytes[4] == 0xA1 && bytes[5] == 0xB1 && bytes[6] == 0x1A && bytes[7] == 0xE1;
+    }
+    return false;
+  }
+
+  Future<bool> _isValidImageBytes(Uint8List bytes) async {
+    if (bytes.lengthInBytes < 50 * 1024 || bytes.lengthInBytes > 10 * 1024 * 1024) {
+      return false;
+    }
+
+    try {
+      await ui.instantiateImageCodec(bytes);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _pickRegisterCV() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -602,10 +699,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     if (!_validCvExtensions.contains(ext) || file.bytes == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir un CV valide."), backgroundColor: Colors.red),
+        const SnackBar(content: Text("Veuillez choisir un CV valide (PDF, DOC, DOCX)."), backgroundColor: Colors.red),
       );
       return;
     }
+
+    if (!_isValidCvBytes(file.bytes!, ext)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Veuillez choisir un CV authentique et lisible."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() {
       _registerCvBytes = file.bytes;
       _registerCvFileName = file.name;
@@ -653,11 +759,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       return;
     }
 
+    if (!await _isValidImageBytes(file.bytes!)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Veuillez sélectionner une image CNIB valide et lisible."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     final looksLikeCnib = await _isLikelyCnibImage(file.bytes!, file.name);
     if (!looksLikeCnib) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez sélectionner une image de CNIB (recto ou verso)."), backgroundColor: Colors.orange),
+        const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso)."), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -892,7 +1006,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         ],
       ),
       child: ElevatedButton(
-        onPressed: _handleAuth,
+        onPressed: isAdmin && !isLogin ? null : _handleAuth,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -941,6 +1055,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     if (!_formKey.currentState!.validate()) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez corriger les erreurs du formulaire'), backgroundColor: Colors.red));
+      return;
+    }
+
+    if (!isLogin && isAdmin) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Inscription administrateur désactivée. Utilisez l’onglet connexion.'),
+        backgroundColor: Colors.red,
+      ));
       return;
     }
 
@@ -1009,9 +1132,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => userType == 'entreprise'
-                  ? CompanyDashboard(initialData: userData)
-                  : CandidateDashboard(initialData: userData),
+              builder: (context) {
+                  if (userType == 'admin') {
+                    return const AdminDashboard();
+                } else if (userType == 'entreprise') {
+                  return CompanyDashboard(initialData: userData);
+                } else {
+                  return CandidateDashboard(initialData: userData);
+                }
+              },
             ),
           );
         } else {
@@ -1081,7 +1210,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               user['email'] = originalUser['email'];
               user['userType'] = originalUser['userType'];
             } else {
-              throw Exception(updateResponse['message'] ?? "Documents non sauvegardÃ©s");
+              throw Exception(updateResponse['message'] ?? "Documents non sauvegardés");
             }
           }
           if (!mounted) return;
@@ -1115,9 +1244,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => userType == 'entreprise'
-                  ? CompanyDashboard(initialData: userData)
-                  : CandidateDashboard(initialData: userData),
+              builder: (context) {
+                  if (userType == 'admin') {
+                    return const AdminDashboard();
+                } else if (userType == 'entreprise') {
+                  return CompanyDashboard(initialData: userData);
+                } else {
+                  return CandidateDashboard(initialData: userData);
+                }
+              },
             ),
           );
         } else {

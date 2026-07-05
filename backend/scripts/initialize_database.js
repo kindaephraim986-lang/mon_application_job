@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+}
 const mysql = require('mysql2/promise');
 
 function getDatabaseConfig() {
@@ -26,6 +28,13 @@ function getDatabaseConfig() {
       throw new Error(
         `MySQL environment variables required in production: ${missing.join(', ')}. ` +
         'Set them in Render service environment variables or render.yaml with sync=false.'
+      );
+    }
+    const invalidHost = ['localhost', '127.0.0.1', '::1'];
+    if (invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+      throw new Error(
+        `Invalid DB_HOST for production: ${process.env.DB_HOST}. ` +
+        'Render cannot connect to a local MySQL host. Use an external MySQL host reachable from Render.'
       );
     }
   }
@@ -62,16 +71,31 @@ async function initializeDatabase(options = {}) {
       await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
       await connection.query(`USE \`${dbName}\``);
 
-      const schemaPath = path.join(__dirname, '..', '..', 'bddiane_sp.sql');
-      if (fs.existsSync(schemaPath)) {
+      const schemaPathCandidates = [
+        path.join(__dirname, '..', '..', 'bddiane_sp.sql'),
+        path.join(__dirname, '..', 'bddiane_sp.sql'),
+        path.join(__dirname, '..', '..', '..', 'bddiane_sp.sql'),
+      ];
+      const schemaPath = schemaPathCandidates.find(fs.existsSync);
+      if (schemaPath) {
         const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        await connection.query(schemaSql);
+        if (schemaSql.trim()) {
+          await connection.query(schemaSql);
+        }
+      } else {
+        console.warn('⚠️ Fichier de schéma MySQL non trouvé. Aucun SQL initial n’a été appliqué.');
       }
 
       for (const migrationFile of getMigrationFiles()) {
         const sql = fs.readFileSync(migrationFile, 'utf8');
         if (sql.trim()) {
-          await connection.query(sql);
+          try {
+            await connection.query(sql);
+          } catch (migrationError) {
+            if (!quiet) {
+              console.warn(`⚠️ Migration ignorée ${path.basename(migrationFile)}: ${migrationError.message}`);
+            }
+          }
         }
       }
 

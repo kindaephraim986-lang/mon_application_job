@@ -1,5 +1,7 @@
 const mysql = require('mysql2');
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const poolOptions = {
     host: process.env.DB_HOST || '127.0.0.1',
@@ -28,6 +30,13 @@ if (process.env.NODE_ENV === 'production') {
         throw new Error(
             `MySQL environment variables required in production: ${missing.join(', ')}. ` +
             'Set them in Render service environment variables or render.yaml with sync=false.'
+        );
+    }
+    const invalidHost = ['localhost', '127.0.0.1', '::1'];
+    if (invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+        throw new Error(
+            `Invalid DB_HOST for production: ${process.env.DB_HOST}. ` +
+            'Render cannot connect to a local MySQL host. Use an external MySQL host reachable from Render.'
         );
     }
 }

@@ -13,6 +13,7 @@ import 'profile_image_helper.dart';
 import 'candidature_service.dart';
 import 'services/api_service.dart';
 import 'payment_service.dart';
+import 'auth_screen.dart';
 import 'utils/logger.dart';
 import 'subscription_service.dart';
 
@@ -99,6 +100,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     _loadCandidateApplications();
     _loadAvailableFields();
     _loadCurrentProfile();
+    // Listen for global offers updates to refresh UI immediately
+    CandidatureService().offresGlobalesNotifier.addListener(() {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   Future<void> _loadCurrentProfile() async {
@@ -409,10 +415,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         return;
       }
 
-      if (!_isValidCNIBImage(bytes)) {
+      if (!_isValidCNIBImage(bytes) || !await _isLikelyCnibImage(bytes, image.name)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
+            const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso).")),
           );
         }
         return;
@@ -465,10 +471,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         return;
       }
 
-      if (!_isValidCNIBImage(bytes)) {
+      if (!_isValidCNIBImage(bytes) || !await _isLikelyCnibImage(bytes, image.name)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("L'image semble trop petite ou corrompue. Assurez-vous que la CNIB est bien lisible.")),
+            const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso).")),
           );
         }
         return;
@@ -530,10 +536,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         children: [
           Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: Text(
                   'CNIB (Recto & Verso)',
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
                 ),
               ),
               if (hasBothFaces) const Icon(Icons.check_circle, color: Colors.green),
@@ -741,6 +747,19 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
   }
 
+  Future<void> _logout() async {
+    // Effacer la session
+    await ApiService.logout();
+    
+    if (!mounted) return;
+    
+    // Naviguer vers l'écran d'authentification et effacer l'historique
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -772,7 +791,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                       children: [
                         _buildMenuItem(0, Icons.person, "Mon Profil"),
                         _buildMenuItem(1, Icons.search, "Mes Offres"),
-                        _buildMenuItem(8, Icons.filter_list, "Parcourir par Filière"),
                         _buildMenuItem(2, Icons.dashboard, "Mon Tableau de bord"),
                         _buildMenuItem(3, Icons.lightbulb, "Conseils"),
                         _buildMenuItem(7, Icons.payment, "Mon abonnement"),
@@ -790,7 +808,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.pop(context),
+                        onTap: _logout,
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -1224,9 +1242,32 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                 child: ListTile(
                   leading: o['logoBytes'] != null
                       ? CircleAvatar(backgroundImage: MemoryImage(o['logoBytes']))
-                      : const CircleAvatar(child: Icon(Icons.business)),
+                      : CircleAvatar(
+                          backgroundColor: Colors.blue.shade700,
+                          child: Text(
+                            (o['entreprise']?.toString().split(' ').map((w) => w.isNotEmpty ? w[0] : '').join() ?? 'E').toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
                   title: Text(o['titre']?.toString() ?? 'Offre', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(_hasMonthlyPass ? "${o['entreprise']} - ${o['lieu']} (${o['typeContrat']})" : "Abonnement requis pour voir les informations de l'entreprise"),
+                  subtitle: _hasMonthlyPass
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("${o['entreprise']} - ${o['lieu']} (${o['typeContrat']})"),
+                            if ((o['description']?.toString() ?? '').isNotEmpty)
+                              Text(o['description']?.toString() ?? '', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            if ((o['competences']?.toString() ?? '').isNotEmpty)
+                              Text("Compétences : ${o['competences']}", style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                            if ((o['niveau']?.toString() ?? '').isNotEmpty)
+                              Text("Niveau : ${o['niveau']}", style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                            if ((o['experience']?.toString() ?? '').isNotEmpty)
+                              Text("Expérience : ${o['experience']}", style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                            if ((o['salaire']?.toString() ?? '').isNotEmpty)
+                              Text("Salaire : ${o['salaire']}", style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                          ],
+                        )
+                      : const Text("Abonnement requis pour voir les informations de l'entreprise"),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1255,11 +1296,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                         ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: _hasMonthlyPass && _candidateEmail.isNotEmpty
+                        onPressed: _candidateEmail.isNotEmpty
                             ? () async {
-                                await ChatService.getOrCreateConversationForCandidate(_candidateEmail, o['entreprise']?.toString() ?? '');
-                                NotificationService.notifyCompany("Le candidat $_candidateNom a initié un chat avec vous.");
-                                setState(() => _selectedIndex = 5);
+                                await _initiateCompanyContact(o['entreprise']?.toString() ?? '');
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -1566,6 +1605,35 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
 
     await _ajouterCandidature(nouvelle);
+  }
+
+  Future<void> _initiateCompanyContact(String companyName) async {
+    if (!_hasMonthlyPass) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Abonnement requis pour contacter cette entreprise."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_candidateEmail.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Email du candidat manquant."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await ChatService.getOrCreateConversationForCandidate(_candidateEmail, companyName);
+    NotificationService.notifyCompany("Le candidat $_candidateNom a initié un chat avec vous.");
+    if (!mounted) return;
+    setState(() => _selectedIndex = 5);
   }
 
   Future<bool> _sendCandidatureToBackend(String offreId) async {

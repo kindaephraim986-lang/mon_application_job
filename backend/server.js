@@ -4,7 +4,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { initializeDatabase } = require('./scripts/initialize_database');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '.env') });
+}
 
 const authRoutes = require('./routes/auth');
 const offersRoutes = require('./routes/offers');
@@ -113,15 +115,21 @@ app.use((err, req, res, next) => {
 const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
 
 async function startServer() {
-  if (process.env.NODE_ENV === 'production' && !process.env.DB_HOST) {
-    console.error('❌ DB_HOST is required in production. Set DB_HOST in Render service environment variables or render.yaml with sync=false.');
-    process.exit(1);
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.DB_HOST) {
+      console.error('❌ DB_HOST is required in production. Set DB_HOST in Render service environment variables or render.yaml with sync=false.');
+      process.exit(1);
+    }
+    const invalidHost = ['localhost', '127.0.0.1', '::1'];
+    if (invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+      console.error('❌ Invalid DB_HOST for production:', process.env.DB_HOST);
+      console.error('   Render cannot connect to a local MySQL host. Use an external MySQL host reachable from Render.');
+      process.exit(1);
+    }
   }
 
   try {
-    if (process.env.DB_HOST) {
-      await initializeDatabase({ quiet: false });
-    }
+    await initializeDatabase({ quiet: false });
   } catch (error) {
     console.error('❌ Initialisation de la base MySQL impossible:', error.message);
     process.exit(1);
