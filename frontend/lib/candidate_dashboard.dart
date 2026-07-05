@@ -16,6 +16,7 @@ import 'payment_service.dart';
 import 'auth_screen.dart';
 import 'utils/logger.dart';
 import 'subscription_service.dart';
+import 'realtime_service.dart';
 
 class CandidateDashboard extends StatefulWidget {
   final Map<String, String> initialData;
@@ -109,7 +110,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     try {
       RealtimeService().connect(baseUrl: ApiService.baseUrl.replaceFirst('/api', ''));
     } catch (e) {}
-    });
   }
 
   Future<void> _loadCurrentProfile() async {
@@ -1635,7 +1635,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       return;
     }
 
-    await ChatService.getOrCreateConversationForCandidate(_candidateEmail, companyName);
+    final convIdStr = await ChatService.getOrCreateConversationForCandidate(_candidateEmail, companyName);
+    try {
+      final convId = int.tryParse(convIdStr.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
+      if (convId > 0) RealtimeService().joinConversation(convId);
+    } catch (e) {}
     NotificationService.notifyCompany("Le candidat $_candidateNom a initié un chat avec vous.");
     if (!mounted) return;
     setState(() => _selectedIndex = 5);

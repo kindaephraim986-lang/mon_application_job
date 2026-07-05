@@ -400,6 +400,10 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
       _companyName,
       candidature.candidatNom,
     );
+    try {
+      final convInt = int.tryParse(convId.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
+      if (convInt > 0) RealtimeService().joinConversation(convInt);
+    } catch (e) {}
 
     if (!mounted) return;
     Navigator.push(
