@@ -5,6 +5,7 @@ import 'notification_service.dart';
 import 'chat_service.dart';
 import 'profile_image_helper.dart';
 import 'candidature_service.dart';
+import 'realtime_service.dart';
 import 'payment_service.dart';
 import 'subscription_service.dart';
 import 'services/api_service.dart';
@@ -52,6 +53,10 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     entrepriseData = widget.initialData;
     _refreshCounts();
     _checkSubscription();
+    // Connect realtime
+    try {
+      RealtimeService().connect(baseUrl: ApiService.baseUrl.replaceFirst('/api', ''));
+    } catch (e) {}
   }
 
   Future<void> _checkSubscription() async {

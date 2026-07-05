@@ -101,7 +101,22 @@ router.post('/', protect, validate([body('conversationId').isInt({ gt: 0 }), bod
             [conversationId, userId, texte]
         );
 
-        res.status(201).json({ success: true, id: result.insertId, message: 'Message envoyé avec succès' });
+                // Emit the new message to connected sockets in the conversation room
+                try {
+                    const { getIo } = require('../socket');
+                    const payload = {
+                        id: result.insertId,
+                        conversationId: conversationId,
+                        expediteur_id: userId,
+                        texte: texte,
+                        date_envoi: new Date().toISOString(),
+                    };
+                    getIo().to(`conversation_${conversationId}`).emit('message:new', payload);
+                } catch (e) {
+                    // ignore if socket not available
+                }
+
+                res.status(201).json({ success: true, id: result.insertId, message: 'Message envoyé avec succès' });
     } catch (error) {
         console.error('SEND MESSAGE ERROR:', error);
         res.status(500).json({ message: 'Erreur serveur lors de l’envoi du message' });

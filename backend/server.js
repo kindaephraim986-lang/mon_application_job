@@ -135,8 +135,19 @@ async function startServer() {
     process.exit(1);
   }
 
+  // Create an http server and attach socket.io
+  const http = require('http');
+  const server = http.createServer(app);
+  const { init } = require('./socket');
+  try {
+    init(server);
+    console.log('Socket.IO initialisé');
+  } catch (e) {
+    console.warn('Impossible d\'initialiser Socket.IO:', e.message);
+  }
+
   if (require.main === module) {
-    app.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
     });
   }

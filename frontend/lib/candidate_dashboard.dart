@@ -105,6 +105,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       if (!mounted) return;
       setState(() {});
     });
+    // Connect to realtime service
+    try {
+      RealtimeService().connect(baseUrl: ApiService.baseUrl.replaceFirst('/api', ''));
+    } catch (e) {}
+    });
   }
 
   Future<void> _loadCurrentProfile() async {
