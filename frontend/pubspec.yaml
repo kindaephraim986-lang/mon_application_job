@@ -18,7 +18,7 @@ dependencies:
   
   # Images et fichiers
   image_picker: ^0.8.7+4
-  file_picker: ^10.3.10
+  file_picker: ^5.2.0
   
   # Stockage local
   shared_preferences: ^2.2.0
