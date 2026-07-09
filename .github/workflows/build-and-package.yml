@@ -27,7 +27,6 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git -b stable --depth 1
           echo "${{ github.workspace }}/flutter/bin" >> $GITHUB_PATH
-          flutter --version
 
       - name: Install dependencies
         run: flutter pub get
