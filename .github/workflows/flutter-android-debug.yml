@@ -1,0 +1,32 @@
+name: Build Flutter Android Debug APK
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: frontend
+
+      - name: Build debug APK
+        run: flutter build apk --debug --target-platform android-arm,android-arm64
+        working-directory: frontend
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mon_application_job-debug-apk
+          path: frontend/build/app/outputs/flutter-apk/app-debug.apk
