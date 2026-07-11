@@ -82,8 +82,24 @@ static const String baseUrl = 'http://localhost:3001/api';
 
 **Options selon votre environnement:**
 - **Windows/Web:** `http://localhost:3001/api`
-- **Émulateur Android:** `http://10.0.2.2:3001/api` (Android Studio)
-- **Téléphone réel:** `http://192.168.X.X:3001/api` (votre IP locale)
+- **Émulateur Android (Android Studio / AVD):** `http://10.0.2.2:3001/api` — l'émulateur mappe `10.0.2.2` vers la machine hôte.
+- **Émulateur Android (Genymotion):** `http://10.0.3.2:3001/api`.
+- **Téléphone réel (sur le même réseau Wi‑Fi):** `http://192.168.X.X:3001/api` (remplacez par l'IP de votre PC).
+
+Exemples de lancement avec override de l'API (utile pour tester):
+
+```bash
+# Utiliser l'API locale sur l'émulateur Android
+flutter run -d emulator-5554 --dart-define=API_BASE_URL=http://10.0.2.2:3001
+
+# Utiliser votre machine locale sur un téléphone réel (ex: 192.168.1.10)
+flutter run -d <device-id> --dart-define=API_BASE_URL=http://192.168.1.10:3001
+
+# Construire une release Android avec URL personnalisée
+flutter build apk --release --dart-define=API_BASE_URL=https://afrijob-backend.onrender.com
+```
+
+Note: `AppConfig` utilise désormais `10.0.2.2` automatiquement en mode `development` sur Android. Si vous avez des cas particuliers, passez `--dart-define=API_BASE_URL` pour forcer l'URL.
 
 ### 3. Vérifier pubspec.yaml
 ```bash

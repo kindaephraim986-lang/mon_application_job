@@ -13,18 +13,25 @@ class AppConfig {
   /// URL API personnalisée via --dart-define=API_BASE_URL
   static const String _customBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
 
-  static String _normalizeBaseUrl(String baseUrl) {
+  /// URL API de production par défaut si la variable d'environnement n'est pas définie.
+  /// Utilise le backend déjà documenté dans le projet.
+  static const String _productionBaseUrl = 'https://afrijob-backend.onrender.com';
+
+  static String normalizeBaseUrl(String baseUrl) {
     final trimmed = baseUrl.trim();
     if (trimmed.isEmpty) {
       return '';
     }
-    if (trimmed.endsWith('/api')) {
-      return trimmed;
+
+    final withoutTrailingSlash = trimmed.endsWith('/')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+
+    if (withoutTrailingSlash.endsWith('/api')) {
+      return withoutTrailingSlash;
     }
-    if (trimmed.endsWith('/')) {
-      return '${trimmed}api';
-    }
-    return '$trimmed/api';
+
+    return '$withoutTrailingSlash/api';
   }
   
   /// Version de l'application
@@ -35,7 +42,21 @@ class AppConfig {
   /// Configuration du serveur selon l'environnement
   static String get baseUrl {
     if (_customBaseUrl.isNotEmpty) {
-      return _normalizeBaseUrl(_customBaseUrl);
+      return normalizeBaseUrl(_customBaseUrl);
+    }
+
+    if (environment == 'production') {
+      return normalizeBaseUrl(_productionBaseUrl);
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Sur Android en développement, l'émulateur Android utilise la loopback
+      // de l'hôte via `10.0.2.2`. Permettre à `--dart-define=API_BASE_URL`
+      // d'overrider si nécessaire. En production on utilise le backend Render.
+      if (environment == 'development') {
+        return normalizeBaseUrl('http://10.0.2.2:3001');
+      }
+      return normalizeBaseUrl(_productionBaseUrl);
     }
 
     if (kIsWeb) {
@@ -56,8 +77,6 @@ class AppConfig {
     }
 
     switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:3001/api'; // Android Emulator
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
