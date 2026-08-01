@@ -1,0 +1,43 @@
+SOLUTION - ERREUR DE CONNEXION AU SERVEUR
+==========================================
+
+Le problème: L'app affiche "Impossible de se connecter au serveur"
+
+SOLUTION RAPIDE :
+=================
+
+1. VERIFIER QUE LE BACKEND EST ACCESSIBLE
+
+Depuis votre téléphone:
+- Ouvrez un navigateur
+- Entrez: http://192.168.11.100:3001/api/health
+- Vous devriez voir une réponse (même une erreur c'est bon !)
+
+Si ça ne marche pas:
+- Vérifiez que le PC et le téléphone sont sur le MEME Wi-Fi
+- Redémarrez le routeur Wi-Fi
+- Vérifiez le firewall Windows
+
+2. REDEMARRER L'APPLICATION
+
+Si le serveur est accessible:
+- Fermez complètement l'application
+- Attendez 5 secondes
+- Réouvrez l'application
+- Cliquez sur "Réessayer"
+
+3. SOLUTION DEFINITIVE
+
+Si ça ne marche toujours pas, contactez-moi avec:
+- L'IP de votre téléphone (Dans Paramètres > WiFi > Propriétés)
+- L'adresse exacte de votre PC sur le réseau
+- Le message d'erreur exact
+
+COMPTES DE TEST (si ca marche)
+===============================
+Candidat  : ephraim@example.com / password123
+Entreprise: contact@techcorp.com / password123
+
+NOTE: 
+L'application est configurée pour se connecter à: http://192.168.11.100:3001
+Assurez-vous que c'est bien l'adresse IP de votre PC sur votre réseau local.

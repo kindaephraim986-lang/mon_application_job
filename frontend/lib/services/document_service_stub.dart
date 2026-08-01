@@ -1,4 +1,5 @@
 /// Fallback implementation for non-web platforms.
+library;
 
 Future<bool> downloadDocument({
   required String signedUrl,
@@ -12,3 +13,4 @@ Future<bool> openDocumentInBrowser(String signedUrl) async {
   // Non-web fallback: opening a document in browser is not supported on this platform.
   return false;
 }
+

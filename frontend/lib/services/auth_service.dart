@@ -9,8 +9,10 @@
 /// 
 /// Migration:
 /// - AuthService.loginUser(email, pwd) → ApiService.login(email: email, password: pwd)
+library;
 
 // Importez ApiService à la place
 export 'api_service.dart';
+
 
 

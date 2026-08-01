@@ -1,5 +1,6 @@
 /// lib/widgets/document_viewer.dart
 /// Lecteur de documents (PDF, images) avec téléchargement
+library;
 
 import 'package:flutter/material.dart';
 import '../services/document_service.dart';
@@ -11,12 +12,12 @@ class DocumentViewer extends StatefulWidget {
   final String title;
 
   const DocumentViewer({
-    Key? key,
+    super.key,
     required this.documentId,
     required this.documentType,
     required this.candidatId,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentViewer> createState() => _DocumentViewerState();
@@ -291,12 +292,12 @@ class DocumentAccessButton extends StatelessWidget {
   final String label;
 
   const DocumentAccessButton({
-    Key? key,
+    super.key,
     required this.documentId,
     required this.documentType,
     required this.candidatId,
     required this.label,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -319,3 +320,4 @@ class DocumentAccessButton extends StatelessWidget {
     );
   }
 }
+

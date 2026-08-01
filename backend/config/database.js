@@ -13,7 +13,6 @@ const poolOptions = {
     connectionLimit: 10,
     queueLimit: 0,
     connectTimeout: 10000,
-    acquireTimeout: 10000,
     timezone: 'Z'
 };
 

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../utils/logger.dart';
 import 'api_service_extended.dart';
+import '../utils/phone_utils_fixed.dart';
 
 // Top-level helper functions to log requests/responses when AppConfig.logApiRequests is true
 Future<http.Response> _httpGet(String url, {Map<String, String>? headers}) async {
@@ -206,6 +207,7 @@ class ApiService {
     String? adresse,
     String? villeLieu,
     String? photoUrl,
+    String? logoUrl,
     String? cvUrl,
     String? cnibRectoUrl,
     String? cnibVersoUrl,
@@ -216,7 +218,7 @@ class ApiService {
 
       final body = {
         'nom': nom,
-        'telephone': telephone,
+        'telephone': telephone != null ? ensureInternationalPhone(telephone) : null,
         'filiere': filiere,
         'age': age,
         'domicile': domicile,
@@ -225,6 +227,7 @@ class ApiService {
         'adresse': adresse,
         'villeLieu': villeLieu,
         'photoUrl': photoUrl,
+        'logoUrl': logoUrl,
         'cvUrl': cvUrl,
         'cnibRectoUrl': cnibRectoUrl,
         'cnibVersoUrl': cnibVersoUrl,
@@ -838,7 +841,47 @@ class ApiService {
         return {'success': true, ...jsonDecode(responseBody)};
       }
 
-      String message = 'Erreur lors du tÃ©lÃ©chargement';
+      String message = 'Erreur lors du téléchargement';
+      try {
+        final data = jsonDecode(responseBody);
+        if (data is Map<String, dynamic> && data['message'] != null) {
+          message = data['message'].toString();
+        }
+      } catch (_) {}
+      return {'success': false, 'message': message};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// Uploader une image CNIB avec validation spécifique CNIB
+  static Future<Map<String, dynamic>> uploadCNIBFileBytes({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final token = await _getToken();
+
+      if (AppConfig.logApiRequests) Logger.info('[API] MULTIPART POST $baseUrl/upload/cnib file: $fileName');
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload/cnib'));
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: fileName,
+        contentType: _contentTypeFromFilename(fileName),
+      ));
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(responseBody)};
+      }
+
+      String message = 'Erreur lors du téléchargement';
       try {
         final data = jsonDecode(responseBody);
         if (data is Map<String, dynamic> && data['message'] != null) {
@@ -1105,7 +1148,7 @@ class ApiService {
   }
 
   // Wrappers for extended API methods (defined in api_service_extended.dart)
-  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) => ApiServiceExtended.uploadProfilePhoto(imageBytes);
+  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes, [String filename = 'profile_photo.jpg']) => ApiServiceExtended.uploadProfilePhoto(imageBytes, filename);
 
   static Future<Map<String, dynamic>> getCurrentProfilePhoto() => ApiServiceExtended.getCurrentProfilePhoto();
 
@@ -1133,6 +1176,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getDocumentAccessLogs(int candidatId) => ApiServiceExtended.getDocumentAccessLogs(candidatId);
 }
+
 
 
 

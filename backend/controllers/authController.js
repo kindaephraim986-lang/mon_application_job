@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/database');
+const { getCandidatePhotoUrl, normalizePhotoUrl } = require('../utils/profilePhotoUtils');
+const profilePhotoService = require('../services/profilePhotoService');
 
 const usersFile = path.join(__dirname, '../data/users.json');
 const ADMIN_EMAIL = 'kindaephraim986@gmail.com';
@@ -192,14 +194,24 @@ const login = async (req, res) => {
 
         // Récupérer les infos du profil
         let profileData = {};
+        let photoUrl = '';
         if (user.type_utilisateur === 'admin') {
             profileData = { nom_complet: 'KINDA', telephone: '', filiere_specialite: '', age: null, domicile: '', sexe: '', photo_profil_url: '', cv_url: '', cnib_recto_url: '', cnib_verso_url: '' };
         } else if (user.type_utilisateur === 'candidat') {
             const [rows] = await db.query(
-                'SELECT nom_complet, telephone, filiere_specialite, age, domicile, sexe, photo_profil_url, cv_url, cnib_recto_url, cnib_verso_url FROM candidats WHERE id = ?',
+                'SELECT nom_complet, telephone, filiere_specialite, age, domicile, sexe, profile_photo_url, photo_profil_url, cv_url, cnib_recto_url, cnib_verso_url FROM candidats WHERE id = ?',
                 [user.id]
             );
-            if (rows.length > 0) profileData = rows[0];
+            if (rows.length > 0) {
+                profileData = rows[0];
+                photoUrl = getCandidatePhotoUrl(profileData);
+                if (!photoUrl) {
+                    const photoResult = await profilePhotoService.getCurrentProfilePhoto(user.id);
+                    if (photoResult?.success && photoResult.photoUrl) {
+                        photoUrl = photoResult.photoUrl;
+                    }
+                }
+            }
         } else {
             const [rows] = await db.query(
                 'SELECT nom_societe, domaine_activite, telephone, adresse_complete, ville_lieu, logo_url FROM entreprises WHERE id = ?',
@@ -209,6 +221,10 @@ const login = async (req, res) => {
         }
 
         const token = generateToken(user.id);
+
+        const photoToReturn = user.type_utilisateur === 'entreprise'
+            ? (profileData.logo_url || '')
+            : normalizePhotoUrl(photoUrl || getCandidatePhotoUrl(profileData), process.env.APP_BASE_URL || 'http://localhost:3001');
 
         res.json({
             success: true,
@@ -226,7 +242,7 @@ const login = async (req, res) => {
                 sexe: profileData.sexe || '',
                 adresse: profileData.adresse_complete || '',
                 villeLieu: profileData.ville_lieu || '',
-                photo: profileData.photo_profil_url || profileData.logo_url || '',
+                photo: photoToReturn,
                 cvUrl: profileData.cv_url || '',
                 cnibRectoUrl: profileData.cnib_recto_url || '',
                 cnibVersoUrl: profileData.cnib_verso_url || ''
@@ -252,16 +268,30 @@ const getMe = async (req, res) => {
 
         const user = users[0];
         let profileData = {};
+        let photoUrl = '';
 
         if (user.type_utilisateur === 'admin') {
             profileData = { nom_complet: 'KINDA' };
         } else if (user.type_utilisateur === 'candidat') {
             const [rows] = await db.query('SELECT * FROM candidats WHERE id = ?', [user.id]);
-            if (rows.length > 0) profileData = rows[0];
+            if (rows.length > 0) {
+                profileData = rows[0];
+                photoUrl = getCandidatePhotoUrl(profileData);
+                if (!photoUrl) {
+                    const photoResult = await profilePhotoService.getCurrentProfilePhoto(user.id);
+                    if (photoResult?.success && photoResult.photoUrl) {
+                        photoUrl = photoResult.photoUrl;
+                    }
+                }
+            }
         } else {
             const [rows] = await db.query('SELECT * FROM entreprises WHERE id = ?', [user.id]);
             if (rows.length > 0) profileData = rows[0];
         }
+
+        const photoToReturn = user.type_utilisateur === 'entreprise'
+            ? (profileData.logo_url || '')
+            : normalizePhotoUrl(photoUrl || getCandidatePhotoUrl(profileData), process.env.APP_BASE_URL || 'http://localhost:3001');
 
         res.json({
             id: user.id,
@@ -275,7 +305,7 @@ const getMe = async (req, res) => {
             sexe: profileData.sexe || '',
             adresse: profileData.adresse_complete || '',
             villeLieu: profileData.ville_lieu || '',
-            photo: profileData.photo_profil_url || profileData.logo_url || '',
+            photo: photoToReturn,
             cvUrl: profileData.cv_url || '',
             cnibRectoUrl: profileData.cnib_recto_url || '',
             cnibVersoUrl: profileData.cnib_verso_url || ''
@@ -332,7 +362,7 @@ const updateProfile = async (req, res) => {
 
             // Récupérer le profil mis à jour
             const [rows] = await db.query(
-                'SELECT nom_complet, telephone, filiere_specialite, age, domicile, sexe, photo_profil_url, cv_url, cnib_recto_url, cnib_verso_url FROM candidats WHERE id = ?',
+                'SELECT nom_complet, telephone, filiere_specialite, age, domicile, sexe, profile_photo_url, photo_profil_url, cv_url, cnib_recto_url, cnib_verso_url FROM candidats WHERE id = ?',
                 [req.user.id]
             );
             const profileData = rows[0] || {};
@@ -347,14 +377,14 @@ const updateProfile = async (req, res) => {
                     age: profileData.age != null ? profileData.age.toString() : '',
                     domicile: profileData.domicile || '',
                     sexe: profileData.sexe || '',
-                    photo: profileData.photo_profil_url || '',
+                    photo: getCandidatePhotoUrl(profileData),
                     cvUrl: profileData.cv_url || '',
                     cnibRectoUrl: profileData.cnib_recto_url || '',
                     cnibVersoUrl: profileData.cnib_verso_url || ''
                 }
             });
         } else {
-            const { nom, telephone, domaine, adresse, villeLieu } = req.body;
+            const { nom, telephone, domaine, adresse, villeLieu, logoUrl } = req.body;
 
             await db.query(
                 `UPDATE entreprises
@@ -362,14 +392,15 @@ const updateProfile = async (req, res) => {
                      telephone = COALESCE(NULLIF(?, ''), telephone),
                      domaine_activite = COALESCE(NULLIF(?, ''), domaine_activite),
                      adresse_complete = COALESCE(NULLIF(?, ''), adresse_complete),
-                     ville_lieu = COALESCE(NULLIF(?, ''), ville_lieu)
+                     ville_lieu = COALESCE(NULLIF(?, ''), ville_lieu),
+                     logo_url = COALESCE(NULLIF(?, ''), logo_url)
                  WHERE id = ?`,
-                [nom ?? null, telephone ?? null, domaine ?? null, adresse ?? null, villeLieu ?? null, req.user.id]
+                [nom ?? null, telephone ?? null, domaine ?? null, adresse ?? null, villeLieu ?? null, logoUrl ?? null, req.user.id]
             );
 
             // Récupérer le profil mis à jour
             const [rows] = await db.query(
-                'SELECT nom_societe, telephone, domaine_activite, adresse_complete, ville_lieu FROM entreprises WHERE id = ?',
+                'SELECT nom_societe, telephone, domaine_activite, adresse_complete, ville_lieu, logo_url FROM entreprises WHERE id = ?',
                 [req.user.id]
             );
             const profileData = rows[0] || {};
@@ -382,7 +413,8 @@ const updateProfile = async (req, res) => {
                     telephone: profileData.telephone || '',
                     domaine: profileData.domaine_activite || '',
                     adresse: profileData.adresse_complete || '',
-                    villeLieu: profileData.ville_lieu || ''
+                    villeLieu: profileData.ville_lieu || '',
+                    photo: profileData.logo_url || ''
                 }
             });
         }

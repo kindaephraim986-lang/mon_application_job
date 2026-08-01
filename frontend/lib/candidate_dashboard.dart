@@ -1,32 +1,37 @@
+import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'notification_service.dart';
 import 'chat_service.dart';
 import 'profile_image_helper.dart';
 import 'candidature_service.dart';
 import 'services/api_service.dart';
+import 'services/document_service.dart';
 import 'payment_service.dart';
 import 'auth_screen.dart';
 import 'utils/logger.dart';
+import 'utils/document_name_utils.dart';
+import 'utils/cnib_reconnect_helper.dart';
 import 'subscription_service.dart';
 import 'realtime_service.dart';
+import 'utils/phone_utils_fixed.dart';
 
 class CandidateDashboard extends StatefulWidget {
   final Map<String, String> initialData;
-  const CandidateDashboard({Key? key, required this.initialData}) : super(key: key);
+  const CandidateDashboard({super.key, required this.initialData});
 
   @override
   State<CandidateDashboard> createState() => _CandidateDashboardState();
 }
 
-class _CandidateDashboardState extends State<CandidateDashboard> {
+class _CandidateDashboardState extends State<CandidateDashboard> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   int _notificationCount = 0;
   int _unreadMessagesCount = 0;
@@ -66,6 +71,23 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     'Divertissement',
   ];
 
+  static const List<Map<String, String>> _countryDialCodes = [
+    {'name': 'Burkina Faso', 'dialCode': '+226'},
+    {'name': 'Côte d’Ivoire', 'dialCode': '+225'},
+    {'name': 'Sénégal', 'dialCode': '+221'},
+    {'name': 'Mali', 'dialCode': '+223'},
+    {'name': 'France', 'dialCode': '+33'},
+    {'name': 'Belgique', 'dialCode': '+32'},
+    {'name': 'Canada', 'dialCode': '+1'},
+    {'name': 'États-Unis', 'dialCode': '+1'},
+    {'name': 'Royaume-Uni', 'dialCode': '+44'},
+    {'name': 'Nigeria', 'dialCode': '+234'},
+    {'name': 'Ghana', 'dialCode': '+233'},
+    {'name': 'Togo', 'dialCode': '+228'},
+    {'name': 'Bénin', 'dialCode': '+229'},
+    {'name': 'Niger', 'dialCode': '+227'},
+  ];
+
   List<String> _availableFields = [];
 
   String get _candidateEmail => candidatData['email'] ?? '';
@@ -79,10 +101,13 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   // Fichiers
   Uint8List? _cvBytes;
   String _cvFileName = '';
+  String? _cvUrl;
   Uint8List? _cnibRectoBytes;
   String _cnibRectoFileName = '';
+  String? _cnibRectoUrl;
   Uint8List? _cnibVersoBytes;
   String _cnibVersoFileName = '';
+  String? _cnibVersoUrl;
 
   String _firstCandidateValue(List<String> keys) {
     for (final key in keys) {
@@ -95,12 +120,26 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   @override
   void initState() {
     super.initState();
-    candidatData = widget.initialData;
+    WidgetsBinding.instance.addObserver(this);
+    candidatData = Map<String, String>.from(widget.initialData);
+    _cvUrl = candidatData['cvUrl']?.toString();
+    if ((_cvUrl?.isNotEmpty ?? false) && _cvFileName.isEmpty) {
+      _cvFileName = getDisplayFileName(_cvUrl, fallback: 'CV importé');
+    }
+    _cnibRectoUrl = candidatData['cnibRectoUrl']?.toString().trim();
+    _cnibVersoUrl = candidatData['cnibVersoUrl']?.toString().trim();
+    if ((_cnibRectoUrl?.isNotEmpty ?? false) && _cnibRectoFileName.isEmpty) {
+      _cnibRectoFileName = 'Recto CNIB';
+    }
+    if ((_cnibVersoUrl?.isNotEmpty ?? false) && _cnibVersoFileName.isEmpty) {
+      _cnibVersoFileName = 'Verso CNIB';
+    }
     _refreshCounts();
     _checkMonthlyPass();
     _loadCandidateApplications();
     _loadAvailableFields();
     _loadCurrentProfile();
+    _refreshProfileFromApi();
     // Listen for global offers updates to refresh UI immediately
     CandidatureService().offresGlobalesNotifier.addListener(() {
       if (!mounted) return;
@@ -109,12 +148,203 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     // Connect to realtime service
     try {
       RealtimeService().connect(baseUrl: ApiService.baseUrl.replaceFirst('/api', ''));
-    } catch (e) {}
+    } catch (e, stackTrace) {
+      Logger.error('Erreur realtime service: $e', e, stackTrace);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_reloadCnibStateFromStorage());
+    }
+  }
+
+  Future<void> _persistCnibUrlsLocally(String? rectoUrl, String? versoUrl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (rectoUrl != null) {
+        await prefs.setString('cnib_recto_url', rectoUrl);
+      } else {
+        await prefs.remove('cnib_recto_url');
+      }
+      if (versoUrl != null) {
+        await prefs.setString('cnib_verso_url', versoUrl);
+      } else {
+        await prefs.remove('cnib_verso_url');
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _refreshProfileFromApi() async {
+    try {
+      final refreshedUser = await ApiService.getCurrentUser();
+      if (!mounted || refreshedUser == null) return;
+
+      final refreshedCnibRecto = [
+        refreshedUser['cnibRectoUrl'],
+        refreshedUser['cnib_recto_url'],
+        refreshedUser['cnibRecto'],
+        refreshedUser['rectoUrl'],
+        refreshedUser['recto'],
+      ].firstWhere(
+        (value) => value != null && value.toString().trim().isNotEmpty,
+        orElse: () => '',
+      );
+      final refreshedCnibVerso = [
+        refreshedUser['cnibVersoUrl'],
+        refreshedUser['cnib_verso_url'],
+        refreshedUser['cnibVerso'],
+        refreshedUser['versoUrl'],
+        refreshedUser['verso'],
+      ].firstWhere(
+        (value) => value != null && value.toString().trim().isNotEmpty,
+        orElse: () => '',
+      );
+
+      if (!mounted) return;
+      setState(() {
+        candidatData.addAll({
+          'id': refreshedUser['id']?.toString() ?? candidatData['id'] ?? '',
+          'email': refreshedUser['email']?.toString() ?? candidatData['email'] ?? '',
+          'userType': refreshedUser['userType']?.toString() ?? candidatData['userType'] ?? 'candidat',
+          'nom': refreshedUser['nom']?.toString() ?? candidatData['nom'] ?? '',
+          'telephone': refreshedUser['telephone']?.toString() ?? candidatData['telephone'] ?? '',
+          'filiere': (refreshedUser['filiere'] ?? refreshedUser['filiere_specialite'])?.toString() ?? candidatData['filiere'] ?? '',
+          'age': refreshedUser['age']?.toString() ?? candidatData['age'] ?? '',
+          'domicile': (refreshedUser['domicile'] ?? refreshedUser['villeLieu'])?.toString() ?? candidatData['domicile'] ?? '',
+          'sexe': (refreshedUser['sexe'] ?? refreshedUser['genre'])?.toString() ?? candidatData['sexe'] ?? '',
+          'photo': refreshedUser['photo']?.toString() ?? candidatData['photo'] ?? '',
+          'cvUrl': refreshedUser['cvUrl']?.toString() ?? candidatData['cvUrl'] ?? '',
+          'cnibRectoUrl': refreshedCnibRecto.toString(),
+          'cnibVersoUrl': refreshedCnibVerso.toString(),
+        });
+        _cvUrl = refreshedUser['cvUrl']?.toString() ?? candidatData['cvUrl'] ?? '';
+        if (_cvUrl != null && _cvUrl!.isNotEmpty) {
+          _cvFileName = getDisplayFileName(_cvUrl, fallback: 'CV importé');
+        }
+        _cnibRectoUrl = refreshedCnibRecto.toString();
+        _cnibVersoUrl = refreshedCnibVerso.toString();
+        if (_cnibRectoUrl?.isNotEmpty ?? false) {
+          _cnibRectoFileName = 'Recto CNIB';
+        }
+        if (_cnibVersoUrl?.isNotEmpty ?? false) {
+          _cnibVersoFileName = 'Verso CNIB';
+        }
+      });
+
+      if ((_cnibRectoUrl?.isNotEmpty ?? false) || (_cnibVersoUrl?.isNotEmpty ?? false)) {
+        await _persistCnibUrlsLocally(_cnibRectoUrl, _cnibVersoUrl);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _reloadCnibStateFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final persistedRecto = prefs.getString('cnib_recto_url')?.trim() ?? '';
+      final persistedVerso = prefs.getString('cnib_verso_url')?.trim() ?? '';
+
+      if (!mounted) return;
+
+      setState(() {
+        if (persistedRecto.isNotEmpty || persistedVerso.isNotEmpty) {
+          candidatData['cnibRectoUrl'] = persistedRecto;
+          candidatData['cnibVersoUrl'] = persistedVerso;
+          _cnibRectoUrl = persistedRecto;
+          _cnibVersoUrl = persistedVerso;
+          if (persistedRecto.isNotEmpty) {
+            _cnibRectoFileName = 'Recto CNIB';
+          } else {
+            _cnibRectoFileName = '';
+          }
+          if (persistedVerso.isNotEmpty) {
+            _cnibVersoFileName = 'Verso CNIB';
+          } else {
+            _cnibVersoFileName = '';
+          }
+        }
+      });
+
+      await _loadCurrentProfile();
+    } catch (_) {}
   }
 
   Future<void> _loadCurrentProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final persistedRecto = prefs.getString('cnib_recto_url')?.trim() ?? '';
+    final persistedVerso = prefs.getString('cnib_verso_url')?.trim() ?? '';
+
+    if ((persistedRecto.isNotEmpty || persistedVerso.isNotEmpty) && mounted) {
+      setState(() {
+        candidatData['cnibRectoUrl'] = persistedRecto;
+        candidatData['cnibVersoUrl'] = persistedVerso;
+        _cnibRectoUrl = persistedRecto;
+        _cnibVersoUrl = persistedVerso;
+        if (persistedRecto.isNotEmpty) {
+          _cnibRectoFileName = 'Recto CNIB';
+        }
+        if (persistedVerso.isNotEmpty) {
+          _cnibVersoFileName = 'Verso CNIB';
+        }
+      });
+    }
+
     final user = await ApiService.getCurrentUser();
     if (!mounted || user == null) return;
+
+    final rawRecto = [
+      user['cnibRectoUrl'],
+      user['cnib_recto_url'],
+      user['cnibRecto'],
+      user['rectoUrl'],
+      user['recto'],
+      candidatData['cnibRectoUrl'],
+      candidatData['cnib_recto_url'],
+    ].firstWhere(
+      (value) => value != null && value.toString().trim().isNotEmpty,
+      orElse: () => '',
+    );
+    final rawVerso = [
+      user['cnibVersoUrl'],
+      user['cnib_verso_url'],
+      user['cnibVerso'],
+      user['versoUrl'],
+      user['verso'],
+      candidatData['cnibVersoUrl'],
+      candidatData['cnib_verso_url'],
+    ].firstWhere(
+      (value) => value != null && value.toString().trim().isNotEmpty,
+      orElse: () => '',
+    );
+
+    final cnibRectoUrl = resolveCnibUrl(
+      userValue: rawRecto?.toString(),
+      initialValue: candidatData['cnibRectoUrl']?.toString(),
+      persistedValue: persistedRecto,
+      currentValue: _cnibRectoUrl,
+    );
+    final cnibVersoUrl = resolveCnibUrl(
+      userValue: rawVerso?.toString(),
+      initialValue: candidatData['cnibVersoUrl']?.toString(),
+      persistedValue: persistedVerso,
+      currentValue: _cnibVersoUrl,
+    );
+    final refreshedPhoto = user['photo']?.toString().trim() ?? '';
+
+    if (cnibRectoUrl.isNotEmpty || cnibVersoUrl.isNotEmpty) {
+      await _persistCnibUrlsLocally(
+        cnibRectoUrl.isNotEmpty ? cnibRectoUrl : null,
+        cnibVersoUrl.isNotEmpty ? cnibVersoUrl : null,
+      );
+    }
+
     setState(() {
       candidatData.addAll({
         'id': user['id']?.toString() ?? candidatData['id'] ?? '',
@@ -126,18 +356,82 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         'age': user['age']?.toString() ?? candidatData['age'] ?? '',
         'domicile': (user['domicile'] ?? user['villeLieu'])?.toString() ?? candidatData['domicile'] ?? '',
         'sexe': (user['sexe'] ?? user['genre'])?.toString() ?? candidatData['sexe'] ?? '',
+        'photo': refreshedPhoto.isNotEmpty ? refreshedPhoto : (candidatData['photo'] ?? ''),
         'cvUrl': user['cvUrl']?.toString() ?? candidatData['cvUrl'] ?? '',
-        'cnibRectoUrl': user['cnibRectoUrl']?.toString() ?? candidatData['cnibRectoUrl'] ?? '',
-        'cnibVersoUrl': user['cnibVersoUrl']?.toString() ?? candidatData['cnibVersoUrl'] ?? '',
+        'cnibRectoUrl': cnibRectoUrl,
+        'cnibVersoUrl': cnibVersoUrl,
       });
+      _cvUrl = user['cvUrl']?.toString() ?? candidatData['cvUrl'] ?? '';
+      if (_cvUrl != null && _cvUrl!.isNotEmpty) {
+        _cvFileName = getDisplayFileName(_cvUrl, fallback: 'CV importé');
+      }
+      _cnibRectoUrl = cnibRectoUrl;
+      _cnibVersoUrl = cnibVersoUrl;
+      if (_cnibRectoUrl?.isNotEmpty ?? false) {
+        _cnibRectoFileName = 'Recto CNIB';
+      }
+      if (_cnibVersoUrl?.isNotEmpty ?? false) {
+        _cnibVersoFileName = 'Verso CNIB';
+      }
     });
+
+    try {
+      final list = await ApiService.getFields();
+      if (list.isEmpty) {
+        setState(() => _availableFields = popularFields);
+      } else {
+        setState(() => _availableFields = list);
+      }
+    } catch (e) {
+      setState(() => _availableFields = popularFields);
+    }
+  }
+
+  Future<String?> _uploadCandidatePhoto(Uint8List imageBytes, String fileName) async {
+    final uploadResponse = await ApiService.uploadProfilePhoto(imageBytes, fileName);
+    if (uploadResponse['success'] == true && uploadResponse['photoUrl'] != null) {
+      final photoUrl = uploadResponse['photoUrl'].toString();
+      final updateResponse = await ApiService.updateProfile(
+        nom: candidatData['nom'] ?? '',
+        telephone: ensureInternationalPhone(candidatData['telephone'] ?? ''),
+        filiere: candidatData['filiere'],
+        age: candidatData['age'],
+        domicile: candidatData['domicile'],
+        sexe: candidatData['sexe'],
+        photoUrl: photoUrl,
+        cvUrl: candidatData['cvUrl'],
+        cnibRectoUrl: candidatData['cnibRectoUrl'],
+        cnibVersoUrl: candidatData['cnibVersoUrl'],
+      );
+      if (updateResponse['success'] == true) {
+        setState(() {
+          candidatData['photo'] = photoUrl;
+        });
+        return photoUrl;
+      }
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logo téléchargé, mais impossible de sauvegarder le profil : ${updateResponse['message'] ?? 'Erreur'}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur d\'upload de la photo : ${uploadResponse['message'] ?? 'Erreur inconnue'}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return null;
   }
 
   Future<void> _loadAvailableFields() async {
     try {
       final list = await ApiService.getFields();
       if (list.isEmpty) {
-        // fallback to popular hardcoded list
         setState(() => _availableFields = popularFields);
       } else {
         setState(() => _availableFields = list);
@@ -229,43 +523,8 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     return const ListEquality().equals(header, pngHeader);
   }
 
-  bool _isValidCNIBImage(Uint8List bytes) {
-    // Vérifier que c'est une vraie image
-    if (!_isValidImageBytes(bytes)) return false;
-
-    // Vérifier la taille approximative (CNIB en photo n'est pas énorme)
-    // Entre 50KB et 10MB raisonnable
-    final sizeInKB = bytes.lengthInBytes / 1024;
-    if (sizeInKB < 50 || sizeInKB > 10000) {
-      return false;
-    }
-
-    return true;
-  }
-
-  Future<bool> _isLikelyCnibImage(Uint8List bytes, String fileName) async {
-    final lowerName = fileName.toLowerCase();
-    final hasCnibKeyword = ['cnib', 'cni', 'identité', 'identite', 'carte', 'recto', 'verso', 'national']
-        .any(lowerName.contains);
-
-    if (!hasCnibKeyword) {
-      return false;
-    }
-
-    if (!_isValidCNIBImage(bytes)) {
-      return false;
-    }
-
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final aspectRatio = image.width / image.height;
-      return aspectRatio >= 1.15 && aspectRatio <= 2.2;
-    } catch (_) {
-      return false;
-    }
-  }
+  bool get _hasCnibRecto => _cnibRectoBytes != null || (_cnibRectoUrl?.isNotEmpty ?? false);
+  bool get _hasCnibVerso => _cnibVersoBytes != null || (_cnibVersoUrl?.isNotEmpty ?? false);
 
   bool _isValidCvBytes(Uint8List bytes, String ext) {
     final lowerExt = ext.toLowerCase();
@@ -392,11 +651,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     }
   }
 
-  Future<void> _pickCNIBRecto() async {
+  Future<void> _pickCNIBRecto({required ImageSource source}) async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
@@ -404,7 +663,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       if (image == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Aucun fichier sélectionné pour le recto de la CNIB")),
+            SnackBar(content: Text(source == ImageSource.camera
+                ? "Aucun scan effectué pour le recto de la CNIB"
+                : "Aucun fichier sélectionné pour le recto de la CNIB")),
           );
         }
         return;
@@ -415,15 +676,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
-          );
-        }
-        return;
-      }
-
-      if (!_isValidCNIBImage(bytes) || !await _isLikelyCnibImage(bytes, image.name)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso).")),
           );
         }
         return;
@@ -448,11 +700,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     }
   }
 
-  Future<void> _pickCNIBVerso() async {
+  Future<void> _pickCNIBVerso({required ImageSource source}) async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
@@ -460,7 +712,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       if (image == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Aucun fichier sélectionné pour le verso de la CNIB")),
+            SnackBar(content: Text(source == ImageSource.camera
+                ? "Aucun scan effectué pour le verso de la CNIB"
+                : "Aucun fichier sélectionné pour le verso de la CNIB")),
           );
         }
         return;
@@ -471,15 +725,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Fichier CNIB invalide. Sélectionnez une image JPG ou PNG réelle.")),
-          );
-        }
-        return;
-      }
-
-      if (!_isValidCNIBImage(bytes) || !await _isLikelyCnibImage(bytes, image.name)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso).")),
           );
         }
         return;
@@ -504,7 +749,55 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     }
   }
 
-  void _showImageDialog(Uint8List imageBytes) {
+  void _showCnibScanOptions({required bool isRecto}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111111),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            Text(
+              isRecto ? 'Recto CNIB' : 'Verso CNIB',
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.white),
+              title: const Text('Scanner avec la caméra', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                if (isRecto) {
+                  _pickCNIBRecto(source: ImageSource.camera);
+                } else {
+                  _pickCNIBVerso(source: ImageSource.camera);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder_open, color: Colors.white),
+              title: const Text('Importer depuis la galerie', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                if (isRecto) {
+                  _pickCNIBRecto(source: ImageSource.gallery);
+                } else {
+                  _pickCNIBVerso(source: ImageSource.gallery);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImageDialog({Uint8List? imageBytes, String? imageUrl}) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -517,7 +810,16 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
             child: InteractiveViewer(
               minScale: 0.5,
               maxScale: 4.0,
-              child: Image.memory(imageBytes, fit: BoxFit.contain),
+              child: imageBytes != null
+                  ? Image.memory(imageBytes, fit: BoxFit.contain)
+                  : imageUrl != null
+                      ? Image.network(imageUrl, fit: BoxFit.contain)
+                      : const Center(
+                          child: Text(
+                            'Aucune image disponible',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
             ),
           ),
         ),
@@ -526,8 +828,8 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   }
 
   Widget _buildCnibUploadSection() {
-    final bool loadedRecto = _cnibRectoBytes != null;
-    final bool loadedVerso = _cnibVersoBytes != null;
+    final bool loadedRecto = _hasCnibRecto;
+    final bool loadedVerso = _hasCnibVerso;
     final bool hasBothFaces = loadedRecto && loadedVerso;
     return Container(
       decoration: BoxDecoration(
@@ -561,35 +863,35 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               Expanded(
                 child: _buildCnibFaceTile(
                   title: _cnibRectoFileName.isEmpty ? 'Recto' : _cnibRectoFileName,
-                  subtitle: loadedRecto ? 'Chargé' : 'Importer le recto',
+                  subtitle: loadedRecto ? null : 'Importer / Scanner le recto',
                   isLoaded: loadedRecto,
-                  onPressed: _pickCNIBRecto,
-                  onPreview: loadedRecto ? () => _showImageDialog(_cnibRectoBytes!) : null,
+                  onPressed: () => _showCnibScanOptions(isRecto: true),
+                  onPreview: loadedRecto
+                      ? () => _showImageDialog(
+                            imageBytes: _cnibRectoBytes,
+                            imageUrl: _cnibRectoUrl,
+                          )
+                      : null,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildCnibFaceTile(
                   title: _cnibVersoFileName.isEmpty ? 'Verso' : _cnibVersoFileName,
-                  subtitle: loadedVerso ? 'Chargé' : 'Importer le verso',
+                  subtitle: loadedVerso ? null : 'Importer / Scanner le verso',
                   isLoaded: loadedVerso,
-                  onPressed: _pickCNIBVerso,
-                  onPreview: loadedVerso ? () => _showImageDialog(_cnibVersoBytes!) : null,
+                  onPressed: () => _showCnibScanOptions(isRecto: false),
+                  onPreview: loadedVerso
+                      ? () => _showImageDialog(
+                            imageBytes: _cnibVersoBytes,
+                            imageUrl: _cnibVersoUrl,
+                          )
+                      : null,
                 ),
               ),
             ],
           ),
-          if (_cnibRectoFileName.isNotEmpty || _cnibVersoFileName.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Recto : ${_cnibRectoFileName.isEmpty ? 'Non chargé' : _cnibRectoFileName}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            Text(
-              'Verso : ${_cnibVersoFileName.isEmpty ? 'Non chargé' : _cnibVersoFileName}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
+
         ],
       ),
     );
@@ -597,7 +899,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
 
   Widget _buildCnibFaceTile({
     required String title,
-    required String subtitle,
+    String? subtitle,
     required bool isLoaded,
     required VoidCallback onPressed,
     VoidCallback? onPreview,
@@ -614,7 +916,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(color: isLoaded ? Colors.green : Colors.white, fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)) : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -635,25 +937,37 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   }
 
   Future<void> _previewCVFromProfil() async {
-    if (_cvBytes == null || _cvFileName.isEmpty) return;
-    final ext = _getExtension(_cvFileName);
+    if (_cvBytes != null && _cvFileName.isNotEmpty) {
+      final ext = _getExtension(_cvFileName);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Aperçu non supporté'),
-        content: Text(
-          ext != 'pdf'
-              ? 'Seul le format PDF peut être visualisé directement. Votre fichier est en format $ext.'
-              : (kIsWeb
-                  ? 'La visualisation PDF n’est pas disponible dans la version Web. Téléchargez votre CV localement pour le consulter.'
-                  : 'Aperçu PDF non disponible actuellement dans cette version.'),
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Aperçu non supporté'),
+          content: Text(
+            ext != 'pdf'
+                ? 'Seul le format PDF peut être visualisé directement. Votre fichier est en format $ext.'
+                : (kIsWeb
+                    ? 'La visualisation PDF n’est pas disponible dans la version Web. Téléchargez votre CV localement pour le consulter.'
+                    : 'Aperçu PDF non disponible actuellement dans cette version.'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
-        ],
-      ),
-    );
+      );
+      return;
+    }
+
+    if (_cvUrl != null && _cvUrl!.isNotEmpty) {
+      final success = await DocumentService.openDocumentInBrowser(_cvUrl!);
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d’ouvrir le CV enregistré depuis ce navigateur.')),
+        );
+      }
+      return;
+    }
   }
 
   String _getExtension(String fileName) {
@@ -668,15 +982,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     required String fileName,
     required String urlField,
   }) async {
-    final upload = await ApiService.uploadFileBytes(bytes: bytes, fileName: fileName);
+    final upload = (urlField == 'cnibRectoUrl' || urlField == 'cnibVersoUrl')
+      ? await ApiService.uploadCNIBFileBytes(bytes: bytes, fileName: fileName)
+      : await ApiService.uploadFileBytes(bytes: bytes, fileName: fileName);
     if (upload['success'] != true) {
       throw Exception(upload['message'] ?? 'Upload impossible');
     }
 
     final url = upload['url']?.toString() ?? '';
     final result = await ApiService.updateProfile(
-      nom: candidatData['nom'] ?? '',
-      telephone: candidatData['telephone'],
+    nom: candidatData['nom'] ?? '',
+    telephone: ensureInternationalPhone(candidatData['telephone'] ?? ''),
       filiere: candidatData['filiere'] ?? candidatData['filiere_specialite'],
       age: candidatData['age'],
       domicile: candidatData['domicile'] ?? candidatData['villeLieu'],
@@ -688,7 +1004,26 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     if (result['success'] != true) {
       throw Exception(result['message'] ?? 'Sauvegarde impossible');
     }
-    setState(() => candidatData[urlField] = url);
+    if (urlField == 'cnibRectoUrl' || urlField == 'cnibVersoUrl') {
+      await _persistCnibUrlsLocally(
+        urlField == 'cnibRectoUrl' ? url : _cnibRectoUrl,
+        urlField == 'cnibVersoUrl' ? url : _cnibVersoUrl,
+      );
+    }
+
+    setState(() {
+      candidatData[urlField] = url;
+      if (urlField == 'cvUrl') {
+        _cvUrl = url;
+        _cvFileName = getDisplayFileName(url, fallback: fileName);
+      } else if (urlField == 'cnibRectoUrl') {
+        _cnibRectoUrl = url;
+        _cnibRectoFileName = 'Recto CNIB';
+      } else if (urlField == 'cnibVersoUrl') {
+        _cnibVersoUrl = url;
+        _cnibVersoFileName = 'Verso CNIB';
+      }
+    });
   }
 
   bool _aDejaPostule(String offreTitre, String entreprise) {
@@ -778,7 +1113,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-                  const ProfileImagePicker(),
+                  ProfileImagePicker(
+                    initialPhotoUrl: candidatData['photo'],
+                    onImageUploaded: _uploadCandidatePhoto,
+                  ),
                   const SizedBox(height: 15),
                   Text(
                     _candidateNom,
@@ -829,7 +1167,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                             ],
                           ),
                           alignment: Alignment.center,
-                          child: const Row(
+                              child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.logout, color: Colors.white),
@@ -951,17 +1289,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                       future: _candidateEmail.isNotEmpty ? SubscriptionService.getRemainingDaysForCandidate(_candidateEmail) : Future.value(0),
                       builder: (context, snapshot) {
                         final days = snapshot.data ?? 0;
-                        return Text("📅 Jours restants : $days jours");
+                        return Text("⏳ Jours restants : $days jours");
                       },
                     ),
-                    const Text("✅ Candidatures illimitées"),
+                    const Text("✨ Candidatures illimitées"),
                   ] else ...[
                     const Text("⚠️ Chaque candidature coûte 500 FCFA"),
                     const Text("💡 Forfait mensuel à 1000 FCFA pour candidatures illimitées"),
                   ],
                   const SizedBox(height: 8),
                   Text(
-                    "🔧 Mode simulation - Aucun paiement réel",
+                    "⚠️ Mode simulation - aucun paiement réel",
                     style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                   ),
                 ],
@@ -983,23 +1321,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               ),
             ),
             
-            if (_hasMonthlyPass) ...[
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  if (_candidateEmail.isEmpty) return;
-                  await SubscriptionService.resetSubscription(_candidateEmail, 'candidate');
-                  await _checkMonthlyPass();
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Abonnement réinitialisé pour test")),
-                  );
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text("Réinitialiser (test)"),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              ),
-            ],
           ],
         ),
       ),
@@ -1016,7 +1337,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Mon Profil Professionnel", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Mon Profil Professionnel", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+                TextButton.icon(
+                  onPressed: _openEditCandidateProfileDialog,
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text("Modifier"),
+                ),
+              ],
+            ),
             const Divider(height: 30),
             Expanded(
               child: ListView(
@@ -1043,7 +1374,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                       if (_cvFileName.isNotEmpty)
                         Expanded(
                           child: GestureDetector(
-                            onTap: _cvBytes != null ? () => _previewCVFromProfil() : null,
+                            onTap: (_cvBytes != null || (_cvUrl?.isNotEmpty ?? false)) ? () => _previewCVFromProfil() : null,
                             child: Text(
                               _cvFileName,
                               style: const TextStyle(fontSize: 14, color: Colors.green, decoration: TextDecoration.underline),
@@ -1053,10 +1384,14 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                         ),
                     ],
                   ),
-                  if (_cvBytes != null) const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text("✓ CV chargé", style: TextStyle(color: Colors.green, fontSize: 12)),
-                  ),
+                  if (_cvBytes != null || (_cvUrl?.isNotEmpty ?? false))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _cvBytes != null ? "✓ CV chargé" : "✓ CV enregistré sur votre profil",
+                        style: const TextStyle(color: Colors.green, fontSize: 12),
+                      ),
+                    ),
                   const Divider(height: 20),
                   _buildCnibUploadSection(),
                 ],
@@ -1079,6 +1414,111 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           Expanded(flex: 3, child: Text(value, style: TextStyle(fontSize: 16, color: Colors.blue[900], fontWeight: FontWeight.w500))),
         ],
       ),
+    );
+  }
+
+  void _openEditCandidateProfileDialog() {
+    final nameController = TextEditingController(text: candidatData['nom']);
+    final telephoneController = TextEditingController(text: candidatData['telephone']);
+    final emailController = TextEditingController(text: candidatData['email']);
+    String selectedDialCode = '+226';
+    final phoneValue = candidatData['telephone']?.trim() ?? '';
+    if (phoneValue.startsWith('+')) {
+      final match = RegExp(r'^(\+\d+)').firstMatch(phoneValue);
+      if (match != null) {
+        selectedDialCode = match.group(1)!;
+        telephoneController.text = phoneValue.replaceFirst(match.group(1)!, '');
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modifier mon profil'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Nom complet'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(6)),
+                      child: DropdownButton<String>(
+                        value: selectedDialCode,
+                        underline: const SizedBox.shrink(),
+                        items: _countryDialCodes.map((c) => DropdownMenuItem(value: c['dialCode'], child: Text(c['dialCode']!))).toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            selectedDialCode = v;
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: telephoneController,
+                        decoration: const InputDecoration(labelText: 'Numéro de téléphone'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedName = nameController.text.trim();
+                final updatedTelephone = formatPhoneNumber(telephoneController.text.trim(), selectedDialCode);
+                final updatedEmail = emailController.text.trim();
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                final result = await ApiService.updateProfile(
+                  nom: updatedName,
+                  telephone: updatedTelephone,
+                  filiere: candidatData['filiere'],
+                  age: candidatData['age'],
+                  domicile: candidatData['domicile'] ?? candidatData['villeLieu'],
+                  sexe: candidatData['sexe'] ?? candidatData['genre'],
+                  photoUrl: candidatData['photo'],
+                  cvUrl: candidatData['cvUrl'],
+                  cnibRectoUrl: candidatData['cnibRectoUrl'],
+                  cnibVersoUrl: candidatData['cnibVersoUrl'],
+                );
+                if (!mounted) return;
+                if (result['success'] == true) {
+                  setState(() {
+                    candidatData['nom'] = updatedName;
+                    candidatData['telephone'] = updatedTelephone;
+                    candidatData['email'] = updatedEmail;
+                  });
+                  navigator.pop();
+                  messenger.showSnackBar(const SnackBar(content: Text('Profil mis à jour')));
+                } else {
+                  messenger.showSnackBar(SnackBar(content: Text('Erreur mise à jour : ${result['message'] ?? 'Erreur'}')));
+                }
+              },
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1639,7 +2079,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     try {
       final convId = int.tryParse(convIdStr.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
       if (convId > 0) RealtimeService().joinConversation(convId);
-    } catch (e) {}
+    } catch (e, stackTrace) {
+      Logger.error('Erreur join conversation: $e', e, stackTrace);
+    }
     NotificationService.notifyCompany("Le candidat $_candidateNom a initié un chat avec vous.");
     if (!mounted) return;
     setState(() => _selectedIndex = 5);
@@ -1690,7 +2132,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "📘 Nos conseils pour décrocher l'emploi ou le stage de vos rêves",
+            "📌 Nos conseils pour décrocher l'emploi ou le stage de vos rêves",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900]),
           ),
           const SizedBox(height: 20),
@@ -1915,13 +2357,13 @@ class PostulationFormDialog extends StatefulWidget {
   final Function(String nom, String telephone, String email, Uint8List? photo, Uint8List? cv, Uint8List? cnibRecto, Uint8List? cnibVerso) onValidate;
 
   const PostulationFormDialog({
-    Key? key,
+    super.key,
     required this.offre,
     required this.candidatEmail,
     required this.candidatNom,
     required this.candidatTel,
     required this.onValidate,
-  }) : super(key: key);
+  });
 
   @override
   State<PostulationFormDialog> createState() => _PostulationFormDialogState();
@@ -2256,7 +2698,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
       // Appeler la fonction de validation
       widget.onValidate(
         _nomCtrl.text.trim(),
-        _telCtrl.text.trim(),
+        _formatPhoneNumber(_telCtrl.text.trim(), _selectedDialCode),
         _emailCtrl.text.trim(),
         _photoBytes,
         _cvBytes,
@@ -2276,6 +2718,34 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
     _telCtrl.dispose();
     _emailCtrl.dispose();
     super.dispose();
+  }
+
+  String _selectedDialCode = '+226';
+
+  final List<Map<String, String>> _countryDialCodes = [
+    {'name': 'Burkina Faso', 'dialCode': '+226'},
+    {'name': 'Côte d’Ivoire', 'dialCode': '+225'},
+    {'name': 'Sénégal', 'dialCode': '+221'},
+    {'name': 'Mali', 'dialCode': '+223'},
+    {'name': 'France', 'dialCode': '+33'},
+    {'name': 'Belgique', 'dialCode': '+32'},
+    {'name': 'Canada', 'dialCode': '+1'},
+    {'name': 'États-Unis', 'dialCode': '+1'},
+    {'name': 'Royaume-Uni', 'dialCode': '+44'},
+    {'name': 'Nigeria', 'dialCode': '+234'},
+    {'name': 'Ghana', 'dialCode': '+233'},
+    {'name': 'Togo', 'dialCode': '+228'},
+    {'name': 'Bénin', 'dialCode': '+229'},
+    {'name': 'Niger', 'dialCode': '+227'},
+  ];
+
+  String _formatPhoneNumber(String rawPhone, String dialCode) {
+    var digits = rawPhone.replaceAll(RegExp(r'[^0-9+]'), '');
+    // If user entered already with +, prefer that
+    if (digits.startsWith('+')) return digits;
+    // Remove leading zeros
+    digits = digits.replaceFirst(RegExp(r'^0+'), '');
+    return '$dialCode$digits';
   }
 
   @override
@@ -2332,14 +2802,33 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
                   ),
                   const SizedBox(height: 12),
                   
-                  TextFormField(
-                    controller: _telCtrl,
-                    decoration: const InputDecoration(
-                      labelText: "Numéro de téléphone *",
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) => v!.isEmpty ? "Champ requis" : null,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(6)),
+                        child: DropdownButton<String>(
+                          value: _selectedDialCode,
+                          underline: const SizedBox.shrink(),
+                          items: _countryDialCodes.map((c) => DropdownMenuItem(value: c['dialCode'], child: Text(c['dialCode']!))).toList(),
+                          onChanged: (v) {
+                            if (v != null) setState(() => _selectedDialCode = v);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _telCtrl,
+                          decoration: const InputDecoration(
+                            labelText: "Numéro de téléphone *",
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (v) => v!.isEmpty ? "Champ requis" : null,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   
@@ -2500,7 +2989,7 @@ class _PostulationFormDialogState extends State<PostulationFormDialog> {
 class CandidateChatScreen extends StatefulWidget {
   final String conversationId;
   final Map<String, String> candidatData;
-  const CandidateChatScreen({Key? key, required this.conversationId, required this.candidatData}) : super(key: key);
+  const CandidateChatScreen({super.key, required this.conversationId, required this.candidatData});
 
   @override
   State<CandidateChatScreen> createState() => _CandidateChatScreenState();
@@ -2656,6 +3145,8 @@ class _CandidateChatScreenState extends State<CandidateChatScreen> {
     );
   }
 }
+
+
 
 
 

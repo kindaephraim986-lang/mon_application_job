@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const profilePhotoService = require('../services/profilePhotoService');
 const { authenticateToken } = require('../middleware/auth');
+const { normalizePhotoUrl } = require('../utils/profilePhotoUtils');
 
 // Configuration multer pour les uploads de photos
 // Utiliser memoryStorage afin de fournir `req.file.buffer` attendu par le service
@@ -17,11 +18,18 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedMimes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+    ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Type de fichier non supporté. Utilisez JPG, PNG, GIF ou WebP.'));
+      cb(new Error('Type de fichier non supporté. Utilisez JPG, PNG, GIF, WebP, HEIC ou HEIF.'));
     }
   }
 });
@@ -32,6 +40,8 @@ const upload = multer({
  */
 router.post('/upload', authenticateToken, upload.single('photo'), async (req, res) => {
   try {
+    console.log('[PROFILE UPLOAD] auth:', req.headers.authorization ? '[present]' : '(none)', 'file:', req.file ? req.file.originalname : '(none)', 'mimetype:', req.file ? req.file.mimetype : '(none)');
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -44,9 +54,11 @@ router.post('/upload', authenticateToken, upload.single('photo'), async (req, re
     const originalName = req.file.originalname;
 
     const result = await profilePhotoService.saveProfilePhoto(candidatId, imageBuffer, originalName);
+    const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
 
     res.json({
       ...result,
+      photoUrl: normalizePhotoUrl(result.photoUrl, baseUrl),
       message: 'Photo de profil mise à jour avec succès'
     });
   } catch (error) {
@@ -69,9 +81,11 @@ router.get('/current', authenticateToken, async (req, res) => {
     const result = await profilePhotoService.getCurrentProfilePhoto(candidatId);
 
     if (result.success) {
-      // Ajouter cache buster à l'URL
+      const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const normalizedUrl = normalizePhotoUrl(result.photoUrl, baseUrl);
       const cacheBuster = `${Date.now()}`;
-      result.photoUrl = `${result.photoUrl}?cb=${cacheBuster}`;
+      const separator = normalizedUrl.includes('?') ? '&' : '?';
+      result.photoUrl = `${normalizedUrl}${separator}cb=${cacheBuster}`;
     }
 
     res.json(result);
@@ -139,8 +153,11 @@ router.get('/public/:candidatId', async (req, res) => {
     const result = await profilePhotoService.getCurrentProfilePhoto(candidatId);
 
     if (result.success) {
+      const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const normalizedUrl = normalizePhotoUrl(result.photoUrl, baseUrl);
       const cacheBuster = `${Date.now()}`;
-      result.photoUrl = `${result.photoUrl}?cb=${cacheBuster}`;
+      const separator = normalizedUrl.includes('?') ? '&' : '?';
+      result.photoUrl = `${normalizedUrl}${separator}cb=${cacheBuster}`;
     }
 
     res.json(result);

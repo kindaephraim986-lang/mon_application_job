@@ -1,259 +1,124 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'auth_screen.dart';
-import 'candidate_dashboard.dart';
-import './company_dashboard_impl.dart';
-import 'screens/home_page.dart';
-import 'services/api_service.dart';
-import 'config/app_config.dart';
-import 'admin_dashboard_v2.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Job research - Plateforme de Recrutement',
-      debugShowCheckedModeBanner: false,
+      title: 'job_research',
       theme: ThemeData(
-        primaryColor: Colors.blue[900],
-        scaffoldBackgroundColor: const Color(0xfff5f7fa),
-        fontFamily: 'Poppins',
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const AuthWrapper(),
-      routes: {
-        '/home': (context) => const HomePage(),
-      },
+      home: const AuthScreen(),
     );
   }
 }
 
-class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
-  late Future<bool> _apiCheckFuture;
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _apiCheckFuture = _checkApiAvailability();
-  }
-
-  /// Vérifie si le serveur API est accessible
-  Future<bool> _checkApiAvailability() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/health'),
-      ).timeout(const Duration(seconds: 5));
-      
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Réessaye de vérifier l'API
-  void _retryConnection() {
+  void _incrementCounter() {
     setState(() {
-      _apiCheckFuture = _checkApiAvailability();
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _apiCheckFuture,
-      builder: (context, apiSnapshot) {
-        // Vérifier d'abord que l'API est accessible
-        if (apiSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    'Connexion au serveur...',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          //
+          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+          // action in the IDE, or press "p" in the console), to see the
+          // wireframe for each widget.
+          mainAxisAlignment: .center,
+          children: [
+            const Text('You have pushed the button this many times:'),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-          );
-        }
-
-        // Si l'API n'est pas accessible, afficher un message d'erreur
-        if (apiSnapshot.hasError || apiSnapshot.data == false) {
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.cloud_off,
-                    size: 80,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Impossible de se connecter au serveur',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Serveur: ${AppConfig.baseUrl}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Assurez-vous que le serveur backend est en cours d\'exécution.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: _retryConnection,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        // Si l'API est accessible, vérifier si l'utilisateur est connecté
-        return FutureBuilder<bool>(
-          future: ApiService.isLoggedIn(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            if (snapshot.data == true) {
-              // L'utilisateur est connecté, vérifier son type
-              return FutureBuilder<Map<String, dynamic>?>(
-                future: ApiService.getCurrentUser(),
-                builder: (context, userSnapshot) {
-                  if (userSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Scaffold(
-                      body: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-
-                  if (userSnapshot.hasError) {
-                    return Scaffold(
-                      body: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 80,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'Erreur lors du chargement du profil',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${userSnapshot.error}',
-                              style: const TextStyle(fontSize: 14, color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 32),
-                            ElevatedButton(
-                              onPressed: () => setState(() {}),
-                              child: const Text('Réessayer'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final user = userSnapshot.data;
-                  if (user != null) {
-                    final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
-                  final userData = {
-                      'id': user['id'].toString(),
-                      'email': user['email'].toString(),
-                      'userType': userType,
-                      'nom': user['nom']?.toString() ?? '',
-                      'nom_societe': user['nom_societe']?.toString() ??
-                          (userType == 'entreprise'
-                              ? user['nom']?.toString() ?? ''
-                              : ''),
-                      'filiere': (user['filiere'] ?? user['filiere_specialite'])
-                              ?.toString() ??
-                          '',
-                      'domaine': user['domaine']?.toString() ?? '',
-                      'telephone': user['telephone']?.toString() ?? '',
-                      'sexe': user['sexe']?.toString() ?? '',
-                      'age': user['age']?.toString() ?? '',
-                      'domicile': user['domicile']?.toString() ?? '',
-                      'adresse': user['adresse']?.toString() ?? '',
-                      'villeLieu': user['villeLieu']?.toString() ?? ''
-                    };
-
-                    if (userType == 'admin') {
-                      return const AdminDashboard();
-                    }
-
-                    if (userType == 'entreprise') {
-                      return CompanyDashboard(initialData: userData);
-                    }
-
-                    return CandidateDashboard(initialData: userData);
-                  }
-                  return const AuthScreen();
-                },
-              );
-            }
-
-            return const AuthScreen();
-          },
-        );
-      },
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
-
 

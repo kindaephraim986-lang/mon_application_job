@@ -32,3 +32,4 @@ Future<bool> openBytesInBrowser(
 ) async {
   return false;
 }
+

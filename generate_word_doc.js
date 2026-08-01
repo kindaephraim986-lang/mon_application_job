@@ -1,157 +1,111 @@
 const fs = require('fs');
 const path = require('path');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType, ImageRun, ShadingType, PageBreak } = require('docx');
+const {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  ImageRun,
+  PageBreak,
+} = require('docx');
 
 const outputPath = path.join(process.cwd(), 'documentation_application_job.docx');
 const screenshotPath = path.join(process.cwd(), 'screenshots', 'app_home.png');
 
 const doc = new Document({
-  sections: [{
-    properties: {},
-    children: [
-      new Paragraph({
-        children: [new TextRun({ text: 'Documentation de l’application Job Research', bold: true, size: 28 })],
-        spacing: { after: 240 },
-        alignment: AlignmentType.CENTER,
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Présentation générale', bold: true, size: 24 })],
-        spacing: { before: 120, after: 120 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Cette application est une plateforme de recherche d’emploi et de mise en relation entre candidats et recruteurs. Elle permet de consulter des offres, d’envoyer des candidatures, de communiquer, de gérer les profils et d’accéder à des fonctionnalités avancées telles que les notifications, l’upload de documents et la gestion des abonnements.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Fonctionnalités principales', bold: true, size: 24 })],
-        spacing: { before: 120, after: 120 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '1. Authentification et gestion des comptes', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'L’application permet à un utilisateur de créer un compte, de se connecter et de gérer son profil. Les comptes sont associés à un rôle, candidat ou entreprise, afin de restreindre certaines actions selon le type d’utilisateur.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '2. Consultation des offres d’emploi', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Les utilisateurs peuvent parcourir les offres disponibles, consulter les détails, et postuler directement depuis l’interface. Cette partie est au cœur de l’expérience utilisateur.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '3. Gestion des candidatures', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Le système permet de suivre les candidatures, de visualiser leur état et d’interagir avec les recruteurs. Cela améliore la traçabilité et la fluidité du processus de recrutement.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '4. Messagerie et échanges', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'L’application intègre une logique de messagerie pour faciliter les échanges entre candidats et entreprises. Cette fonctionnalité favorise une communication directe et rapide.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '5. Notifications en temps réel', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Les utilisateurs reçoivent des notifications relatives à leurs actions, à l’évolution des candidatures et aux événements importants. Les notifications sont visibles depuis la barre de navigation.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '6. Upload de documents et de photos', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'L’application permet d’ajouter des documents, des photos de profil et de gérer leur affichage. Cette fonction est utile pour personnaliser les comptes et transmettre des informations complémentaires.' })],
-        spacing: { after: 160 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: '7. Abonnement et accès premium', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Certaines sections sont protégées selon l’abonnement actif. Cela permet d’offrir un accès différencié et d’encadrer l’utilisation de fonctionnalités sensibles.' })],
-        spacing: { after: 200 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Capture d’écran de l’interface principale', bold: true, size: 20 })],
-        spacing: { before: 120, after: 120 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'La capture ci-dessous montre la page d’accueil de l’application et l’organisation générale de l’interface utilisateur.' })],
-        spacing: { after: 120 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Vue d’ensemble de l’interface', bold: true })],
-        spacing: { after: 80 },
-      }),
-      new Paragraph({
-        children: [
-          new ImageRun({
-            data: fs.readFileSync(screenshotPath),
-            transformation: { width: 450, height: 250 },
-          })
-        ],
-        alignment: AlignmentType.CENTER,
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Résumé fonctionnel', bold: true, size: 24 })],
-        spacing: { before: 180, after: 120 },
-      }),
-      new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Fonctionnalité', bold: true })] })], shading: { fill: 'D9EAF7' } }),
-              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Description', bold: true })] })], shading: { fill: 'D9EAF7' } }),
-            ],
-          }),
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ text: 'Authentification' })] }),
-              new TableCell({ children: [new Paragraph({ text: 'Connexion, inscription et gestion des profils.' })] }),
-            ],
-          }),
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ text: 'Offres' })] }),
-              new TableCell({ children: [new Paragraph({ text: 'Consultation et candidature aux offres d’emploi.' })] }),
-            ],
-          }),
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ text: 'Notifications' })] }),
-              new TableCell({ children: [new Paragraph({ text: 'Alertes et suivi des événements importants.' })] }),
-            ],
-          }),
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ text: 'Documents' })] }),
-              new TableCell({ children: [new Paragraph({ text: 'Upload, visualisation et gestion des fichiers.' })] }),
-            ],
-          }),
-        ],
-        width: { size: 100, type: WidthType.PERCENTAGE },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Conclusion', bold: true, size: 24 })],
-        spacing: { before: 180, after: 120 },
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: 'Cette application propose une expérience complète pour la recherche d’emploi, avec un accès simple aux offres, une gestion claire des candidatures et des fonctionnalités modernes orientées utilisateur.' })],
-        spacing: { after: 120 },
-      }),
-    ],
-  }],
+  sections: [
+    {
+      properties: {},
+      children: [
+        new Paragraph({
+          text: 'Documentation de l’application Job Research',
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 240 },
+        }),
+
+        new Paragraph({ text: 'Chapitre 1 : Présentation générale', heading: HeadingLevel.HEADING_1, spacing: { after: 120 } }),
+        new Paragraph({ text: 'Job Research est une application de mise en relation entre candidats et entreprises. Elle fournit un espace sécurisé pour s’inscrire, se connecter, gérer un profil, consulter des offres, envoyer des candidatures, échanger des messages et recevoir des notifications en temps réel.' }),
+        new Paragraph({ text: 'Le système distingue les rôles suivants :', spacing: { before: 120, after: 80 } }),
+        new Paragraph({ text: '• Candidat : recherche des offres, postule, gère son profil et ses documents.', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Entreprise : publie des offres, consulte les candidatures et communique avec les candidats.', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Administrateur : supervise la plateforme, gère les utilisateurs et les offres.', bullet: { level: 0 } }),
+        new Paragraph({ text: 'L’application intègre les modules suivants : authentification, offre d’emploi, candidature, messagerie, notifications, upload de fichiers, gestion de profil et administration.', spacing: { after: 160 } }),
+
+        new Paragraph({ text: 'Chapitre 2 : Fonctionnement et flux principaux', heading: HeadingLevel.HEADING_1, spacing: { before: 180, after: 120 } }),
+        new Paragraph({ text: '2.1 Inscription et connexion' }),
+        new Paragraph({ text: 'Lorsqu’un utilisateur s’inscrit, il fournit un email, un mot de passe et des informations supplémentaires selon son rôle. Le backend valide les données puis crée un compte dans la base. Lors de la connexion, l’utilisateur envoie ses identifiants au backend qui renvoie un jeton d’authentification en cas de succès.' }),
+        new Paragraph({ text: '2.2 Consultation des offres' }),
+        new Paragraph({ text: 'Les offres sont récupérées depuis l’API et affichées dans une liste. L’utilisateur peut filtrer et sélectionner une offre pour en voir les détails et postuler.' }),
+        new Paragraph({ text: '2.3 Candidature et suivi' }),
+        new Paragraph({ text: 'Une candidature est envoyée via un appel API. Le système peut enregistrer l’état de la candidature, permettre au recruteur de la consulter et mettre à jour le statut.' }),
+        new Paragraph({ text: '2.4 Messagerie et notifications' }),
+        new Paragraph({ text: 'La messagerie permet l’échange direct entre candidats et entreprises. Les notifications alertent l’utilisateur lorsqu’une action importante survient, comme une nouvelle offre ou un message reçu.' }),
+        new Paragraph({ text: '2.5 Upload de documents' }),
+        new Paragraph({ text: 'Le candidat ou l’entreprise peut téléverser des documents et des photos de profil. Ces fichiers sont stockés et accessibles via l’interface, et utilisés pour enrichir le profil ou compléter une candidature.' }),
+
+        new Paragraph({ text: 'Chapitre 3 : Diagrammes', heading: HeadingLevel.HEADING_1, spacing: { before: 180, after: 120 } }),
+        new Paragraph({ text: '3.1 Diagramme de classes', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+        new Paragraph({ text: 'Classes principales :', spacing: { after: 80 } }),
+        new Paragraph({ text: '• Utilisateur (id, email, motDePasse, role, nom, telephone, type, statut, token)', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Offre (id, titre, description, entrepriseId, lieu, typeContrat, salaire)', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Candidature (id, offreId, candidatId, statut, dateSoumission)', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Message (id, conversationId, expediteurId, destinataireId, contenu, dateEnvoi)', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Notification (id, utilisateurId, titre, message, lu, date)', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Document (id, utilisateurId, type, url, dateUpload)', bullet: { level: 0 } }),
+        new Paragraph({ text: 'Relations : un utilisateur peut avoir plusieurs offres (si entreprise), plusieurs candidatures, plusieurs messages et notifications.', spacing: { after: 160 } }),
+        new Paragraph({ text: '3.2 Diagramme de cas d’utilisation', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+        new Paragraph({ text: 'Cas d’utilisation principaux :', spacing: { after: 80 } }),
+        new Paragraph({ text: '• S’inscrire', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Se connecter', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Consulter les offres', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Postuler à une offre', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Envoyer un message', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Gérer son profil', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Recevoir des notifications', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Gérer les utilisateurs et les offres (admin)', bullet: { level: 0 } }),
+        new Paragraph({ text: 'Ce diagramme montre les acteurs : Candidat, Entreprise, Administrateur et Système.', spacing: { after: 160 } }),
+        new Paragraph({ text: '3.3 Diagramme de séquence', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+        new Paragraph({ text: 'Exemple : séquence de connexion', spacing: { after: 80 } }),
+        new Paragraph({ text: '1. L’utilisateur saisit son email et son mot de passe dans l’application.', bullet: { level: 0 } }),
+        new Paragraph({ text: '2. Le client envoie la requête POST /api/auth/login au backend.', bullet: { level: 0 } }),
+        new Paragraph({ text: '3. Le backend valide les informations puis interroge la base de données.', bullet: { level: 0 } }),
+        new Paragraph({ text: '4. Le backend renvoie un jeton d’authentification et les données utilisateur.', bullet: { level: 0 } }),
+        new Paragraph({ text: '5. Le client stocke le jeton et redirige l’utilisateur vers le tableau de bord approprié.', bullet: { level: 0 } }),
+        new Paragraph({ text: 'Ce flux illustre l’interaction entre l’utilisateur, le front-end, le back-end et la base de données.', spacing: { after: 160 } }),
+
+        new Paragraph({ text: 'Chapitre 4 : Captures nécessaires et scénarios', heading: HeadingLevel.HEADING_1, spacing: { before: 180, after: 120 } }),
+        new Paragraph({ text: 'Les captures essentielles couvrent les usages suivants :', spacing: { after: 80 } }),
+        new Paragraph({ text: '• Page d’inscription / connexion', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Tableau de bord candidat', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Tableau de bord entreprise', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Page de détails d’une offre', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Page de messagerie', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Interface de gestion des documents', bullet: { level: 0 } }),
+        new Paragraph({ text: '• Page d’administration', bullet: { level: 0 } }),
+        new Paragraph({ text: 'Ces captures permettent de documenter les parcours utilisateurs et de vérifier la conformité des écrans avec les exigences fonctionnelles.', spacing: { after: 160 } }),
+        new Paragraph({ text: 'Capture de l’interface principale', bold: true, size: 20, spacing: { before: 120, after: 120 } }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync(screenshotPath),
+              transformation: { width: 500, height: 280 },
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({ text: 'Le screenshot ci-dessus montre l’écran d’accueil avec le formulaire de connexion, les onglets de rôle et une identité visuelle sombre.', spacing: { after: 160 } }),
+        new Paragraph({ text: 'Conclusion', heading: HeadingLevel.HEADING_1, spacing: { before: 180, after: 120 } }),
+        new Paragraph({ text: 'Ce document présente les principaux chapitres de l’application Job Research, son fonctionnement, ses diagrammes de conception et les captures essentielles. Il peut servir de livrable pour une soutenance ou une revue fonctionnelle.', spacing: { after: 120 } }),
+      ],
+    },
+  ],
 });
 
 (async () => {

@@ -1,11 +1,12 @@
 /// lib/widgets/notifications_center.dart
 /// Centre de notifications avec badge et liste
+library;
 
 import 'package:flutter/material.dart';
 import '../services/notification_service_flutter.dart';
 
 class NotificationsCenter extends StatefulWidget {
-  const NotificationsCenter({Key? key}) : super(key: key);
+  const NotificationsCenter({super.key});
 
   @override
   State<NotificationsCenter> createState() => _NotificationsCenterState();
@@ -162,7 +163,7 @@ class NotificationTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   const NotificationTile({
-    Key? key,
+    super.key,
     required this.isRead,
     required this.type,
     required this.title,
@@ -170,7 +171,7 @@ class NotificationTile extends StatelessWidget {
     required this.formattedTime,
     required this.onMarkAsRead,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +291,7 @@ class NotificationTile extends StatelessWidget {
 class NotificationBadge extends StatefulWidget {
   final VoidCallback onTap;
 
-  const NotificationBadge({Key? key, required this.onTap}) : super(key: key);
+  const NotificationBadge({super.key, required this.onTap});
 
   @override
   State<NotificationBadge> createState() => _NotificationBadgeState();
@@ -346,3 +347,5 @@ class _NotificationBadgeState extends State<NotificationBadge> {
     );
   }
 }
+
+

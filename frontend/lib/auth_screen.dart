@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'candidate_dashboard.dart';
 import './company_dashboard_impl.dart';
 import 'admin_dashboard_v2.dart';
 import 'services/api_service.dart';
-import 'services/ocr_service.dart';
-import 'utils/ocr_helpers.dart';
+import 'utils/cnib_reconnect_helper.dart';
+import 'utils/phone_utils_fixed.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  const AuthScreen({super.key});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -20,7 +18,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   bool isLogin = true;
   bool isCandidat = true;
   bool isAdmin = false;
+  bool _obscurePassword = true;
   String selectedSexe = 'Masculin';
+  String _selectedCandidateDialCode = '+226';
+  String _selectedEntrepriseDialCode = '+226';
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -42,21 +43,174 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   final _domaineController = TextEditingController();
   final _lieuEntrepriseController = TextEditingController();
   final _telSocieteController = TextEditingController();
-  Uint8List? _registerCvBytes;
-  Uint8List? _registerCnibRectoBytes;
-  Uint8List? _registerCnibVersoBytes;
-  String _registerCvFileName = '';
-  String _registerCnibRectoFileName = '';
-  String _registerCnibVersoFileName = '';
-  Map<String, String>? _ocrExtractedData;
-  String _ocrVerificationMessage = '';
 
-  static const List<String> _validCvExtensions = ['pdf', 'doc', 'docx'];
-  static const List<String> _validImageExtensions = ['jpg', 'jpeg', 'png'];
+  final List<Map<String, String>> _countryDialCodes = [
+    {'name': 'Burkina Faso', 'dialCode': '+226'},
+    {'name': 'Côte d’Ivoire', 'dialCode': '+225'},
+    {'name': 'Sénégal', 'dialCode': '+221'},
+    {'name': 'Mali', 'dialCode': '+223'},
+    {'name': 'France', 'dialCode': '+33'},
+    {'name': 'Belgique', 'dialCode': '+32'},
+    {'name': 'Canada', 'dialCode': '+1'},
+    {'name': 'États-Unis', 'dialCode': '+1'},
+    {'name': 'Royaume-Uni', 'dialCode': '+44'},
+    {'name': 'Allemagne', 'dialCode': '+49'},
+    {'name': 'Espagne', 'dialCode': '+34'},
+    {'name': 'Italie', 'dialCode': '+39'},
+    {'name': 'Portugal', 'dialCode': '+351'},
+    {'name': 'Suisse', 'dialCode': '+41'},
+    {'name': 'Pays-Bas', 'dialCode': '+31'},
+    {'name': 'Luxembourg', 'dialCode': '+352'},
+    {'name': 'Afrique du Sud', 'dialCode': '+27'},
+    {'name': 'Nigeria', 'dialCode': '+234'},
+    {'name': 'Ghana', 'dialCode': '+233'},
+    {'name': 'Kenya', 'dialCode': '+254'},
+    {'name': 'Togo', 'dialCode': '+228'},
+    {'name': 'Bénin', 'dialCode': '+229'},
+    {'name': 'Guinée', 'dialCode': '+224'},
+    {'name': 'Niger', 'dialCode': '+227'},
+    {'name': 'Mauritanie', 'dialCode': '+222'},
+    {'name': 'Algérie', 'dialCode': '+213'},
+    {'name': 'Maroc', 'dialCode': '+212'},
+    {'name': 'Tunisie', 'dialCode': '+216'},
+    {'name': 'Égypte', 'dialCode': '+20'},
+    {'name': 'Libye', 'dialCode': '+218'},
+    {'name': 'Ethiopie', 'dialCode': '+251'},
+    {'name': 'Tanzanie', 'dialCode': '+255'},
+    {'name': 'Ouganda', 'dialCode': '+256'},
+    {'name': 'Rwanda', 'dialCode': '+250'},
+    {'name': 'Cameroun', 'dialCode': '+237'},
+    {'name': 'Congo', 'dialCode': '+242'},
+    {'name': 'RD Congo', 'dialCode': '+243'},
+    {'name': 'Gabon', 'dialCode': '+241'},
+    {'name': 'République centrafricaine', 'dialCode': '+236'},
+    {'name': 'Tchad', 'dialCode': '+235'},
+    {'name': 'Djibouti', 'dialCode': '+253'},
+    {'name': 'Comores', 'dialCode': '+269'},
+    {'name': 'Madagascar', 'dialCode': '+261'},
+    {'name': 'Maurice', 'dialCode': '+230'},
+    {'name': 'Seychelles', 'dialCode': '+248'},
+    {'name': 'Sao Tomé-et-Principe', 'dialCode': '+239'},
+    {'name': 'Cap-Vert', 'dialCode': '+238'},
+    {'name': 'Guinée-Bissau', 'dialCode': '+245'},
+    {'name': 'Guinée équatoriale', 'dialCode': '+240'},
+    {'name': 'Angola', 'dialCode': '+244'},
+    {'name': 'Mozambique', 'dialCode': '+258'},
+    {'name': 'Zimbabwe', 'dialCode': '+263'},
+    {'name': 'Zambie', 'dialCode': '+260'},
+    {'name': 'Malawi', 'dialCode': '+265'},
+    {'name': 'Botswana', 'dialCode': '+267'},
+    {'name': 'Lesotho', 'dialCode': '+266'},
+    {'name': 'Namibie', 'dialCode': '+264'},
+    {'name': 'Eswatini', 'dialCode': '+268'},
+    {'name': 'Somalie', 'dialCode': '+252'},
+    {'name': 'Érythrée', 'dialCode': '+291'},
+    {'name': 'Soudan', 'dialCode': '+249'},
+    {'name': 'Soudan du Sud', 'dialCode': '+211'},
+    {'name': 'Liban', 'dialCode': '+961'},
+    {'name': 'Jordanie', 'dialCode': '+962'},
+    {'name': 'Israël', 'dialCode': '+972'},
+    {'name': 'Palestine', 'dialCode': '+970'},
+    {'name': 'Arabie saoudite', 'dialCode': '+966'},
+    {'name': 'Émirats arabes unis', 'dialCode': '+971'},
+    {'name': 'Qatar', 'dialCode': '+974'},
+    {'name': 'Koweït', 'dialCode': '+965'},
+    {'name': 'Bahreïn', 'dialCode': '+973'},
+    {'name': 'Oman', 'dialCode': '+968'},
+    {'name': 'Yémen', 'dialCode': '+967'},
+    {'name': 'Iran', 'dialCode': '+98'},
+    {'name': 'Irak', 'dialCode': '+964'},
+    {'name': 'Syrie', 'dialCode': '+963'},
+    {'name': 'Turquie', 'dialCode': '+90'},
+    {'name': 'Arménie', 'dialCode': '+374'},
+    {'name': 'Azerbaïdjan', 'dialCode': '+994'},
+    {'name': 'Géorgie', 'dialCode': '+995'},
+    {'name': 'Kazakhstan', 'dialCode': '+7'},
+    {'name': 'Ouzbékistan', 'dialCode': '+998'},
+    {'name': 'Turkménistan', 'dialCode': '+993'},
+    {'name': 'Tadjikistan', 'dialCode': '+992'},
+    {'name': 'Kirghizstan', 'dialCode': '+996'},
+    {'name': 'Russie', 'dialCode': '+7'},
+    {'name': 'Ukraine', 'dialCode': '+380'},
+    {'name': 'Pologne', 'dialCode': '+48'},
+    {'name': 'Tchéquie', 'dialCode': '+420'},
+    {'name': 'Slovaquie', 'dialCode': '+421'},
+    {'name': 'Hongrie', 'dialCode': '+36'},
+    {'name': 'Roumanie', 'dialCode': '+40'},
+    {'name': 'Bulgarie', 'dialCode': '+359'},
+    {'name': 'Serbie', 'dialCode': '+381'},
+    {'name': 'Croatie', 'dialCode': '+385'},
+    {'name': 'Slovénie', 'dialCode': '+386'},
+    {'name': 'Bosnie-Herzégovine', 'dialCode': '+387'},
+    {'name': 'Monténégro', 'dialCode': '+382'},
+    {'name': 'Albanie', 'dialCode': '+355'},
+    {'name': 'Macédoine du Nord', 'dialCode': '+389'},
+    {'name': 'Grèce', 'dialCode': '+30'},
+    {'name': 'Chypre', 'dialCode': '+357'},
+    {'name': 'Malte', 'dialCode': '+356'},
+    {'name': 'Norvège', 'dialCode': '+47'},
+    {'name': 'Suède', 'dialCode': '+46'},
+    {'name': 'Danemark', 'dialCode': '+45'},
+    {'name': 'Finlande', 'dialCode': '+358'},
+    {'name': 'Islande', 'dialCode': '+354'},
+    {'name': 'Irlande', 'dialCode': '+353'},
+    {'name': 'Autriche', 'dialCode': '+43'},
+    {'name': 'Brésil', 'dialCode': '+55'},
+    {'name': 'Argentine', 'dialCode': '+54'},
+    {'name': 'Chili', 'dialCode': '+56'},
+    {'name': 'Pérou', 'dialCode': '+51'},
+    {'name': 'Colombie', 'dialCode': '+57'},
+    {'name': 'Venezuela', 'dialCode': '+58'},
+    {'name': 'Mexique', 'dialCode': '+52'},
+    {'name': 'Costa Rica', 'dialCode': '+506'},
+    {'name': 'Guatemala', 'dialCode': '+502'},
+    {'name': 'Salvador', 'dialCode': '+503'},
+    {'name': 'Honduras', 'dialCode': '+504'},
+    {'name': 'Nicaragua', 'dialCode': '+505'},
+    {'name': 'Panama', 'dialCode': '+507'},
+    {'name': 'Dominique', 'dialCode': '+1'},
+    {'name': 'Jamaïque', 'dialCode': '+1'},
+    {'name': 'Haïti', 'dialCode': '+509'},
+    {'name': 'Bolivie', 'dialCode': '+591'},
+    {'name': 'Paraguay', 'dialCode': '+595'},
+    {'name': 'Uruguay', 'dialCode': '+598'},
+    {'name': 'Équateur', 'dialCode': '+593'},
+    {'name': 'Guyana', 'dialCode': '+592'},
+    {'name': 'Suriname', 'dialCode': '+597'},
+    {'name': 'Australie', 'dialCode': '+61'},
+    {'name': 'Nouvelle-Zélande', 'dialCode': '+64'},
+    {'name': 'Papouasie-Nouvelle-Guinée', 'dialCode': '+675'},
+    {'name': 'Fidji', 'dialCode': '+679'},
+    {'name': 'Indonésie', 'dialCode': '+62'},
+    {'name': 'Malaisie', 'dialCode': '+60'},
+    {'name': 'Philippines', 'dialCode': '+63'},
+    {'name': 'Singapour', 'dialCode': '+65'},
+    {'name': 'Thaïlande', 'dialCode': '+66'},
+    {'name': 'Vietnam', 'dialCode': '+84'},
+    {'name': 'Cambodge', 'dialCode': '+855'},
+    {'name': 'Laos', 'dialCode': '+856'},
+    {'name': 'Birmanie', 'dialCode': '+95'},
+    {'name': 'Inde', 'dialCode': '+91'},
+    {'name': 'Pakistan', 'dialCode': '+92'},
+    {'name': 'Bangladesh', 'dialCode': '+880'},
+    {'name': 'Sri Lanka', 'dialCode': '+94'},
+    {'name': 'Népal', 'dialCode': '+977'},
+    {'name': 'Bhoutan', 'dialCode': '+975'},
+    {'name': 'Maldive', 'dialCode': '+960'},
+    {'name': 'Japon', 'dialCode': '+81'},
+    {'name': 'Corée du Sud', 'dialCode': '+82'},
+    {'name': 'Corée du Nord', 'dialCode': '+850'},
+    {'name': 'Chine', 'dialCode': '+86'},
+    {'name': 'Taïwan', 'dialCode': '+886'},
+    {'name': 'Hong Kong', 'dialCode': '+852'},
+    {'name': 'Macao', 'dialCode': '+853'},
+    {'name': 'Pakistan', 'dialCode': '+92'},
+  ];
 
   @override
   void initState() {
     super.initState();
+    isLogin = false;
     _fadeController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_fadeController);
     _fadeController.forward();
@@ -352,18 +506,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             },
           ),
           const SizedBox(height: 12),
-          _buildInputField(
+          _buildPhoneInputField(
             controller: _telController,
-            hintText: "Numéro de téléphone",
-            icon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
+            selectedDialCode: _selectedCandidateDialCode,
+            onDialCodeChanged: (value) => setState(() => _selectedCandidateDialCode = value),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Le téléphone est obligatoire';
               }
-              final normalized = value.replaceAll(RegExp(r'\s+'), '');
-              final regex = RegExp(r'^(?:(?:\+221|00221)\d{9}|(?:\+226|00226)\d{8}|0\d{8,9})$');
-              if (!regex.hasMatch(normalized)) {
+              final normalized = value.trim();
+              if (!isValidPhoneNumber(normalized)) {
                 return 'Téléphone invalide';
               }
               return null;
@@ -427,17 +579,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             },
           ),
           const SizedBox(height: 12),
-          _buildDocumentPicker(
-            title: _registerCvFileName.isEmpty ? "Curriculum Vitae (CV)" : _registerCvFileName,
-            subtitle: "PDF, DOC ou DOCX",
-            icon: Icons.description_outlined,
-            isLoaded: _registerCvBytes != null,
-            onPressed: _pickRegisterCV,
-          ),
-          const SizedBox(height: 12),
-          _buildCnibPickerSection(),
-          _buildOcrStatus(),
-          _buildOcrExtractedFields(),
         ] else ...[
           _buildInputField(
             controller: _societeController,
@@ -475,18 +616,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             },
           ),
           const SizedBox(height: 12),
-          _buildInputField(
+          _buildPhoneInputField(
             controller: _telSocieteController,
-            hintText: "Numéro de téléphone",
-            icon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
+            selectedDialCode: _selectedEntrepriseDialCode,
+            onDialCodeChanged: (value) => setState(() => _selectedEntrepriseDialCode = value),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Le téléphone est obligatoire';
               }
-              final normalized = value.replaceAll(RegExp(r'\s+'), '');
-              final regex = RegExp(r'^(?:(?:\+221|00221)\d{9}|(?:\+226|00226)\d{8}|0\d{8,9})$');
-              if (!regex.hasMatch(normalized)) {
+              final normalized = value.trim();
+              if (!isValidPhoneNumber(normalized)) {
                 return 'Téléphone invalide';
               }
               return null;
@@ -515,431 +654,79 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           hintText: "Mot de passe",
           icon: Icons.lock_outline,
           isPassword: true,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Le mot de passe est requis';
+            }
+            if (value.trim().length < 6) {
+              return 'Le mot de passe doit contenir au moins 6 caractères';
+            }
+            return null;
+          },
         ),
       ],
     );
   }
 
-  Widget _buildDocumentPicker({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool isLoaded,
-    required VoidCallback onPressed,
+
+
+  Widget _buildPhoneInputField({
+    required TextEditingController controller,
+    required String selectedDialCode,
+    required ValueChanged<String> onDialCodeChanged,
+    required String? Function(String?)? validator,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isLoaded ? Colors.green : const Color(0xFF333333), width: 1.5),
+        border: Border.all(color: const Color(0xFF333333), width: 1.5),
       ),
-      child: ListTile(
-        leading: Icon(isLoaded ? Icons.check_circle : icon, color: isLoaded ? Colors.green : Colors.white70),
-        title: Text(
-          title,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          isLoaded ? "Fichier chargé" : subtitle,
-          style: TextStyle(color: isLoaded ? Colors.green : Colors.white54, fontSize: 12),
-        ),
-        trailing: TextButton(
-          onPressed: onPressed,
-          child: Text(isLoaded ? "Modifier" : "Importer"),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCnibPickerSection() {
-    final bool hasBothFaces = _registerCnibRectoBytes != null && _registerCnibVersoBytes != null;
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: hasBothFaces ? Colors.green : const Color(0xFF333333), width: 1.5),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'CNIB (Recto & Verso)',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
-                ),
-              ),
-              if (hasBothFaces) const Icon(Icons.check_circle, color: Colors.green),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Importer les deux faces ensemble. Le recto est vérifié par OCR.',
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildCnibFaceTile(
-                  title: _registerCnibRectoFileName.isEmpty ? 'Recto' : _registerCnibRectoFileName,
-                  subtitle: _registerCnibRectoBytes != null ? 'Chargé' : 'Importer le recto',
-                  isLoaded: _registerCnibRectoBytes != null,
-                  onPressed: () => _pickRegisterCNIB(isRecto: true),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildCnibFaceTile(
-                  title: _registerCnibVersoFileName.isEmpty ? 'Verso' : _registerCnibVersoFileName,
-                  subtitle: _registerCnibVersoBytes != null ? 'Chargé' : 'Importer le verso',
-                  isLoaded: _registerCnibVersoBytes != null,
-                  onPressed: () => _pickRegisterCNIB(isRecto: false),
-                ),
-              ),
-            ],
-          ),
-          if (_registerCnibRectoFileName.isNotEmpty || _registerCnibVersoFileName.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Recto : ${_registerCnibRectoFileName.isEmpty ? 'Non chargé' : _registerCnibRectoFileName}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            Text(
-              'Verso : ${_registerCnibVersoFileName.isEmpty ? 'Non chargé' : _registerCnibVersoFileName}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCnibFaceTile({
-    required String title,
-    required String subtitle,
-    required bool isLoaded,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isLoaded ? Colors.green : const Color(0xFF333333), width: 1.3),
-      ),
-      child: ListTile(
-        title: Text(
-          title,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: isLoaded ? Colors.green : Colors.white, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-        trailing: TextButton(
-          onPressed: onPressed,
-          child: Text(isLoaded ? 'Modifier' : 'Importer'),
-        ),
-      ),
-    );
-  }
-
-  String _getExtension(String fileName) {
-    final lowerName = fileName.toLowerCase();
-    final dotIndex = lowerName.lastIndexOf('.');
-    if (dotIndex == -1 || dotIndex == lowerName.length - 1) return '';
-    return lowerName.substring(dotIndex + 1);
-  }
-
-  bool _isValidCvBytes(Uint8List bytes, String ext) {
-    if (bytes.lengthInBytes < 20 * 1024 || bytes.lengthInBytes > 10 * 1024 * 1024) {
-      return false;
-    }
-
-    final lowerExt = ext.toLowerCase();
-    if (lowerExt == 'pdf') {
-      return bytes.lengthInBytes > 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46;
-    }
-    if (lowerExt == 'docx') {
-      if (bytes.lengthInBytes < 4 || bytes[0] != 0x50 || bytes[1] != 0x4B || bytes[2] != 0x03 || bytes[3] != 0x04) {
-        return false;
-      }
-      final sample = String.fromCharCodes(bytes.sublist(0, bytes.lengthInBytes < 1024 ? bytes.lengthInBytes : 1024));
-      return sample.contains('word/') && sample.contains('[Content_Types].xml');
-    }
-    if (lowerExt == 'doc') {
-      return bytes.lengthInBytes > 8 && bytes[0] == 0xD0 && bytes[1] == 0xCF && bytes[2] == 0x11 && bytes[3] == 0xE0 && bytes[4] == 0xA1 && bytes[5] == 0xB1 && bytes[6] == 0x1A && bytes[7] == 0xE1;
-    }
-    return false;
-  }
-
-  Future<bool> _isValidImageBytes(Uint8List bytes) async {
-    if (bytes.lengthInBytes < 50 * 1024 || bytes.lengthInBytes > 10 * 1024 * 1024) {
-      return false;
-    }
-
-    try {
-      await ui.instantiateImageCodec(bytes);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _pickRegisterCV() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: _validCvExtensions,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    final ext = _getExtension(file.name);
-    if (!_validCvExtensions.contains(ext) || file.bytes == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir un CV valide (PDF, DOC, DOCX)."), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    if (!_isValidCvBytes(file.bytes!, ext)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir un CV authentique et lisible."), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    setState(() {
-      _registerCvBytes = file.bytes;
-      _registerCvFileName = file.name;
-    });
-  }
-
-  Future<bool> _isLikelyCnibImage(Uint8List bytes, String fileName) async {
-    final lowerName = fileName.toLowerCase();
-    final hasCnibKeyword = ['cnib', 'cni', 'identité', 'identite', 'carte', 'recto', 'verso', 'national']
-        .any(lowerName.contains);
-
-    if (!hasCnibKeyword) {
-      return false;
-    }
-
-    if (bytes.lengthInBytes < 50 * 1024) {
-      return false;
-    }
-
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final aspectRatio = image.width / image.height;
-      return aspectRatio >= 1.15 && aspectRatio <= 2.2;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _pickRegisterCNIB({required bool isRecto}) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: _validImageExtensions,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    final ext = _getExtension(file.name);
-    if (!_validImageExtensions.contains(ext) || file.bytes == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir une image JPG ou PNG."), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    if (!await _isValidImageBytes(file.bytes!)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez sélectionner une image CNIB valide et lisible."), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    final looksLikeCnib = await _isLikelyCnibImage(file.bytes!, file.name);
-    if (!looksLikeCnib) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez sélectionner une image de CNIB authentique (recto ou verso)."), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
-    setState(() {
-      if (isRecto) {
-        _registerCnibRectoBytes = file.bytes;
-        _registerCnibRectoFileName = file.name;
-      } else {
-        _registerCnibVersoBytes = file.bytes;
-        _registerCnibVersoFileName = file.name;
-      }
-    });
-
-    if (isRecto) {
-      await _processCnibRectoOcr();
-    }
-  }
-
-  Future<Map<String, String>> _uploadRegistrationDocuments() async {
-    final urls = <String, String>{};
-    if (_registerCvBytes != null) {
-      final upload = await ApiService.uploadFileBytes(bytes: _registerCvBytes!, fileName: _registerCvFileName);
-      if (upload['success'] != true) throw Exception(upload['message'] ?? "Erreur upload CV");
-      urls['cvUrl'] = upload['url']?.toString() ?? '';
-    }
-    if (_registerCnibRectoBytes != null) {
-      final upload = await ApiService.uploadFileBytes(bytes: _registerCnibRectoBytes!, fileName: _registerCnibRectoFileName);
-      if (upload['success'] != true) throw Exception(upload['message'] ?? "Erreur upload CNIB recto");
-      urls['cnibRectoUrl'] = upload['url']?.toString() ?? '';
-    }
-    if (_registerCnibVersoBytes != null) {
-      final upload = await ApiService.uploadFileBytes(bytes: _registerCnibVersoBytes!, fileName: _registerCnibVersoFileName);
-      if (upload['success'] != true) throw Exception(upload['message'] ?? "Erreur upload CNIB verso");
-      urls['cnibVersoUrl'] = upload['url']?.toString() ?? '';
-    }
-    return urls;
-  }
-
-  Future<bool> _processCnibRectoOcr({bool silent = false}) async {
-    if (_registerCnibRectoBytes == null) {
-      return true;
-    }
-
-    final extractionResponse = await ApiService.extractOcrTextFromImageBytes(
-      bytes: _registerCnibRectoBytes!,
-      fileName: _registerCnibRectoFileName,
-    );
-
-    if (extractionResponse['success'] != true) {
-      _ocrVerificationMessage = extractionResponse['message']?.toString() ?? 'Erreur d’extraction OCR';
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_ocrVerificationMessage), backgroundColor: Colors.red),
-        );
-      }
-      return false;
-    }
-
-    final rawText = extractionResponse['text']?.toString() ?? '';
-    final ocrData = extractCandidateFieldsFromOcr(rawText);
-    final userData = {
-      'nom': _nomController.text,
-      'telephone': _telController.text,
-      'age': _ageController.text,
-      'domicile': _domicileController.text,
-    };
-
-    final verifyResponse = await OcrService.verifyDocuments(userData: userData, ocrData: ocrData);
-
-    if (verifyResponse['success'] != true) {
-      _ocrVerificationMessage = verifyResponse['message']?.toString() ?? 'Erreur de vérification OCR';
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_ocrVerificationMessage), backgroundColor: Colors.red),
-        );
-      }
-      return false;
-    }
-
-    final comparison = verifyResponse['comparison'] as Map<String, dynamic>? ?? {};
-    final mismatches = <String>[];
-    if (comparison['nom'] == false) mismatches.add('nom');
-    if (comparison['age'] == false) mismatches.add('âge');
-    if (comparison['telephone'] == false) mismatches.add('téléphone');
-    if (comparison['domicile'] == false) mismatches.add('domicile');
-
-    setState(() {
-      _ocrExtractedData = ocrData;
-      if (mismatches.isEmpty) {
-        _ocrVerificationMessage = 'OCR CNIB vérifié : données cohérentes avec le formulaire.';
-      } else {
-        _ocrVerificationMessage = 'Incohérence détectée sur : ${mismatches.join(', ')}.';
-      }
-    });
-
-    if (mismatches.isNotEmpty && !silent && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_ocrVerificationMessage), backgroundColor: Colors.orange),
-      );
-    }
-
-    return true;
-  }
-
-  Widget _buildOcrStatus() {
-    if (_ocrVerificationMessage.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Text(
-        _ocrVerificationMessage,
-        style: TextStyle(
-          color: _ocrVerificationMessage.contains('cohérentes') ? Colors.greenAccent : Colors.orangeAccent,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOcrExtractedFields() {
-    if (_ocrExtractedData == null || _ocrExtractedData!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF333333), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Données extraites du CNIB recto',
-            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-          const SizedBox(height: 10),
-          _buildOcrFieldRow('Nom', _ocrExtractedData!['nom'] ?? ''),
-          _buildOcrFieldRow('Âge', _ocrExtractedData!['age'] ?? ''),
-          _buildOcrFieldRow('Téléphone', _ocrExtractedData!['telephone'] ?? ''),
-          _buildOcrFieldRow('Domicile', _ocrExtractedData!['domicile'] ?? ''),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOcrFieldRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              '$label :',
-              style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w500),
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedDialCode,
+                dropdownColor: const Color(0xFF1A1A1A),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+                items: _countryDialCodes.map((country) {
+                  return DropdownMenuItem<String>(
+                    value: country['dialCode'],
+                    child: Text('${country['dialCode']} ${country['name']}', overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    onDialCodeChanged(value);
+                  }
+                },
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              value.isEmpty ? 'Non détecté' : value,
-              style: TextStyle(
-                color: value.isEmpty ? Colors.white38 : Colors.white,
-                fontSize: 13,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              validator: validator,
+              decoration: const InputDecoration(
+                hintText: 'Numéro de téléphone',
+                hintStyle: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                errorStyle: TextStyle(color: Colors.redAccent, fontSize: 12),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              ),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
               ),
             ),
           ),
@@ -964,7 +751,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       ),
       child: TextFormField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: isPassword ? _obscurePassword : false,
         keyboardType: keyboardType,
         validator: validator,
         decoration: InputDecoration(
@@ -979,7 +766,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           prefixIcon: Icon(icon, color: Colors.white70, size: 20),
           suffixIcon: isPassword
-              ? const Icon(Icons.visibility_off, color: Colors.white54, size: 18)
+              ? IconButton(
+                  splashRadius: 18,
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.white54,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                )
               : null,
         ),
         style: const TextStyle(
@@ -1051,6 +850,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  String _formatPhoneNumber(String rawPhone, String dialCode) {
+    final digits = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return '';
+    return '$dialCode$digits';
+  }
+
   Future<void> _handleAuth() async {
     if (!_formKey.currentState!.validate()) {
       if (!mounted) return;
@@ -1067,20 +872,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       return;
     }
 
-    if (!isLogin && isCandidat) {
-      if (_registerCvBytes == null || _registerCnibRectoBytes == null || _registerCnibVersoBytes == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez importer votre CV et les deux faces de votre CNIB'), backgroundColor: Colors.red));
-        return;
-      }
-
-      final ocrSuccess = await _processCnibRectoOcr(silent: true);
-      if (!ocrSuccess) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vérifiez votre CNIB recto : OCR impossible ou incohérence détectée.'), backgroundColor: Colors.red));
-        return;
-      }
-    }
+    
 
     var isLoadingDialogOpen = false;
     try {
@@ -1107,6 +899,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         if (response['token'] != null) {
           final user = response['user'] ?? {};
           final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
+          final prefs = await SharedPreferences.getInstance();
+          final persistedRecto = prefs.getString('cnib_recto_url')?.trim() ?? '';
+          final persistedVerso = prefs.getString('cnib_verso_url')?.trim() ?? '';
+          final resolvedCnibRecto = resolveCnibUrl(
+            userValue: user['cnibRectoUrl']?.toString(),
+            initialValue: user['cnib_recto_url']?.toString(),
+            persistedValue: persistedRecto,
+          );
+          final resolvedCnibVerso = resolveCnibUrl(
+            userValue: user['cnibVersoUrl']?.toString(),
+            initialValue: user['cnib_verso_url']?.toString(),
+            persistedValue: persistedVerso,
+          );
           final Map<String, String> userData = {
             'id': user['id']?.toString() ?? '',
             'email': user['email']?.toString() ?? '',
@@ -1122,10 +927,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             'domicile': (user['domicile'] ?? user['villeLieu'])?.toString() ?? '',
             'sexe': (user['sexe'] ?? user['genre'])?.toString() ?? '',
             'genre': user['genre']?.toString() ?? '',
+            'photo': user['photo']?.toString() ?? '',
             'age': user['age']?.toString() ?? '',
             'cvUrl': user['cvUrl']?.toString() ?? '',
-            'cnibRectoUrl': user['cnibRectoUrl']?.toString() ?? '',
-            'cnibVersoUrl': user['cnibVersoUrl']?.toString() ?? ''
+            'cnibRectoUrl': resolvedCnibRecto,
+            'cnibVersoUrl': resolvedCnibVerso,
           };
 
           if (!mounted) return;
@@ -1153,11 +959,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       } else {
         // INSCRIPTION
         final Map<String, dynamic> extraData = {};
+        final normalizedCandidatePhone = _formatPhoneNumber(_telController.text, _selectedCandidateDialCode);
+        final normalizedEntreprisePhone = _formatPhoneNumber(_telSocieteController.text, _selectedEntrepriseDialCode);
+
         if (isCandidat) {
           extraData.addAll({
             'nom': _nomController.text,
             'filiere': _filiereController.text,
-            'telephone': _telController.text,
+            'telephone': normalizedCandidatePhone,
             'sexe': selectedSexe,
             'age': int.tryParse(_ageController.text.split(' ')[0])?.toString() ?? '22',
             'domicile': _domicileController.text,
@@ -1168,7 +977,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             'nomSociete': _societeController.text,
             'domaine': _domaineController.text,
             'villeLieu': _lieuEntrepriseController.text,
-            'telephone': _telSocieteController.text,
+            'telephone': normalizedEntreprisePhone,
             'description': 'Entreprise partenaire',
             'adresse': _lieuEntrepriseController.text,
           });
@@ -1179,7 +988,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           password: _passController.text,
           userType: isCandidat ? 'candidat' : 'entreprise',
           nom: isCandidat ? _nomController.text : _societeController.text,
-          telephone: isCandidat ? _telController.text : _telSocieteController.text,
+          telephone: isCandidat ? normalizedCandidatePhone : normalizedEntreprisePhone,
           filiere: isCandidat ? _filiereController.text : null,
           age: isCandidat ? int.tryParse(_ageController.text.split(' ')[0])?.toString() ?? _ageController.text : null,
           sexe: isCandidat ? selectedSexe : null,
@@ -1189,13 +998,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
         if (!mounted) return;
         if (registerResponse['success'] == true && registerResponse['token'] != null) {
-          final uploadedUrls = isCandidat ? await _uploadRegistrationDocuments() : <String, String>{};
+          final uploadedUrls = <String, String>{};
           final originalUser = Map<String, dynamic>.from(registerResponse['user'] ?? {});
           Map<String, dynamic> user = Map<String, dynamic>.from(originalUser);
           if (isCandidat && uploadedUrls.isNotEmpty) {
             final updateResponse = await ApiService.updateProfile(
               nom: _nomController.text,
-              telephone: _telController.text,
+              telephone: normalizedCandidatePhone,
               filiere: _filiereController.text,
               age: int.tryParse(_ageController.text.split(' ')[0])?.toString() ?? _ageController.text,
               domicile: _domicileController.text,
@@ -1219,6 +1028,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             isLoadingDialogOpen = false;
           }
           final userType = user['userType']?.toString().toLowerCase() ?? 'candidat';
+          final prefs = await SharedPreferences.getInstance();
+          final persistedRecto = prefs.getString('cnib_recto_url')?.trim() ?? '';
+          final persistedVerso = prefs.getString('cnib_verso_url')?.trim() ?? '';
+          final resolvedCnibRecto = resolveCnibUrl(
+            userValue: user['cnibRectoUrl']?.toString(),
+            initialValue: user['cnib_recto_url']?.toString(),
+            persistedValue: persistedRecto,
+          );
+          final resolvedCnibVerso = resolveCnibUrl(
+            userValue: user['cnibVersoUrl']?.toString(),
+            initialValue: user['cnib_verso_url']?.toString(),
+            persistedValue: persistedVerso,
+          );
           final Map<String, String> userData = {
             'id': user['id']?.toString() ?? '',
             'email': user['email']?.toString() ?? '',
@@ -1234,10 +1056,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             'domicile': (user['domicile'] ?? user['villeLieu'])?.toString() ?? '',
             'sexe': (user['sexe'] ?? user['genre'])?.toString() ?? '',
             'genre': user['genre']?.toString() ?? '',
+            'photo': user['photo']?.toString() ?? '',
             'age': user['age']?.toString() ?? '',
             'cvUrl': user['cvUrl']?.toString() ?? '',
-            'cnibRectoUrl': user['cnibRectoUrl']?.toString() ?? '',
-            'cnibVersoUrl': user['cnibVersoUrl']?.toString() ?? ''
+            'cnibRectoUrl': resolvedCnibRecto,
+            'cnibVersoUrl': resolvedCnibVerso,
           };
 
           if (!mounted) return;
@@ -1275,5 +1098,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     }
   }
 }
+
+
 
 

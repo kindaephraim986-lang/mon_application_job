@@ -41,3 +41,4 @@ Future<bool> openBytesInBrowser(
     return false;
   }
 }
+

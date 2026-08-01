@@ -1,4 +1,12 @@
-const phonePattern = /^(?:(?:\+221|00221)\d{9}|(?:\+226|00226)\d{8}|0\d{8,9}|\d{8,9})$/;
+const isValidPhoneInput = (value) => {
+  if (typeof value !== 'string') return false;
+
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  const digits = trimmed.replace(/[^\d]/g, '');
+  return digits.length >= 7 && digits.length <= 15;
+};
 
 const validateRegister = (req, res, next) => {
   const { email, password, userType, nom, telephone, age, domicile, filiere, sexe, nomSociete, domaine, villeLieu } = req.body || {};
@@ -21,7 +29,7 @@ const validateRegister = (req, res, next) => {
       errors.push({ msg: 'Le nom complet est requis' });
     }
 
-    if (telephone && typeof telephone === 'string' && telephone.trim() && !phonePattern.test(telephone.trim())) {
+    if (telephone && typeof telephone === 'string' && telephone.trim() && !isValidPhoneInput(telephone)) {
       errors.push({ msg: 'Téléphone candidat invalide' });
     }
 
@@ -41,7 +49,7 @@ const validateRegister = (req, res, next) => {
       errors.push({ msg: 'La ville / lieu est requis' });
     }
 
-    if (telephone && typeof telephone === 'string' && telephone.trim() && !phonePattern.test(telephone.trim())) {
+    if (telephone && typeof telephone === 'string' && telephone.trim() && !isValidPhoneInput(telephone)) {
       errors.push({ msg: 'Téléphone entreprise invalide' });
     }
   }
@@ -53,6 +61,18 @@ const validateRegister = (req, res, next) => {
   return next();
 };
 
+const validateProfileUpdate = (req, res, next) => {
+  const { telephone } = req.body || {};
+
+  if (telephone && typeof telephone === 'string' && telephone.trim() && !isValidPhoneInput(telephone)) {
+    return res.status(422).json({ errors: [{ msg: 'Téléphone invalide' }] });
+  }
+
+  return next();
+};
+
 module.exports = {
-  validateRegister
+  isValidPhoneInput,
+  validateRegister,
+  validateProfileUpdate
 };

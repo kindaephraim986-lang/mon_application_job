@@ -1,16 +1,15 @@
 import 'dart:async';
 
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import 'services/api_service.dart';
 import 'candidature_service.dart';
-import 'chat_service.dart';
 
 class RealtimeService {
   static final RealtimeService _instance = RealtimeService._internal();
   factory RealtimeService() => _instance;
   RealtimeService._internal();
 
-  IO.Socket? _socket;
+  socket_io.Socket? _socket;
   final StreamController<Map<String, dynamic>> _messageController = StreamController.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
@@ -19,7 +18,7 @@ class RealtimeService {
     if (_socket != null && _socket!.connected) return;
 
     try {
-      _socket = IO.io(baseUrl, <String, dynamic>{
+      _socket = socket_io.io(baseUrl, <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': true,
       });
@@ -28,13 +27,13 @@ class RealtimeService {
         // print('Realtime connected: ${_socket!.id}');
       });
 
-      _socket!.on('offers:refresh', (data) async {
+      _socket!.on('offers:refresh', (_) async {
         try {
           final offers = await ApiService.getOffers();
-          if (offers is List) {
-            CandidatureService().replaceOffers(List<Map<String, dynamic>>.from(offers));
-          }
-        } catch (e) {}
+          CandidatureService().replaceOffers(List<Map<String, dynamic>>.from(offers));
+        } catch (_) {
+          // Ignore refresh failures and keep the UI responsive.
+        }
       });
 
       _socket!.on('message:new', (data) {
@@ -46,8 +45,8 @@ class RealtimeService {
       _socket!.on('disconnect', (_) {
         // handle disconnect
       });
-    } catch (e) {
-      // ignore
+    } catch (_) {
+      // Ignore socket initialization failures and let the app continue.
     }
   }
 
@@ -65,3 +64,4 @@ class RealtimeService {
     _socket = null;
   }
 }
+

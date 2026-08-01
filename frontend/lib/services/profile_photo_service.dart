@@ -1,8 +1,10 @@
 /// lib/services/profile_photo_service.dart
 /// Service pour gérer les photos de profil
+library;
 
 import 'dart:typed_data';
 import 'api_service_extended.dart';
+import '../config/app_config.dart';
 import '../utils/logger.dart';
 
 class ProfilePhotoService {
@@ -17,9 +19,9 @@ class ProfilePhotoService {
   /// Uploader une nouvelle photo de profil
   /// @param imageBytes - Les bytes de l'image sélectionnée
   /// @return Map avec success, photoUrl, cacheBuster, etc.
-  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) async {
+  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes, String filename) async {
     try {
-      final response = await ApiServiceExtended.uploadProfilePhoto(imageBytes);
+      final response = await ApiServiceExtended.uploadProfilePhoto(imageBytes, filename);
 
       if (response['success'] == true) {
         return {
@@ -111,10 +113,24 @@ class ProfilePhotoService {
   static String generateCachedUrl(String baseUrl) {
     if (baseUrl.isEmpty) return '';
 
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final separator = baseUrl.contains('?') ? '&' : '?';
+    final trimmedUrl = baseUrl.trim();
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final separator = trimmedUrl.contains('?') ? '&' : '?';
+      return '$trimmedUrl${separator}t=$timestamp&cb=${DateTime.now().hashCode}';
+    }
 
-    return '$baseUrl${separator}t=$timestamp&cb=${DateTime.now().hashCode}';
+    String normalizedBase = AppConfig.baseUrl;
+    if (normalizedBase.endsWith('/api')) {
+      normalizedBase = normalizedBase.substring(0, normalizedBase.length - 4);
+    }
+    final absoluteUrl = trimmedUrl.startsWith('/')
+        ? '$normalizedBase$trimmedUrl'
+        : '$normalizedBase/$trimmedUrl';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final separator = absoluteUrl.contains('?') ? '&' : '?';
+
+    return '$absoluteUrl${separator}t=$timestamp&cb=${DateTime.now().hashCode}';
   }
 }
 

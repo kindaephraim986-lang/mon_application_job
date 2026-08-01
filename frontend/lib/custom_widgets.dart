@@ -8,13 +8,13 @@ class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.icon,
     required this.controller,
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -76,5 +76,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 }
+
+
 
 

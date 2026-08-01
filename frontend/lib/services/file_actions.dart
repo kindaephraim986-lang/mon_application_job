@@ -27,3 +27,4 @@ class FileActions {
     return impl.openBytesInBrowser(bytes, fileName, mimeType);
   }
 }
+

@@ -52,7 +52,7 @@ class PaymentService {
                 leading: Icon(method.icon, color: method.color),
                 title: Text(method.name),
                 onTap: () => Navigator.pop(context, method),
-              )).toList(),
+              )),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -319,6 +319,7 @@ class PaymentMethod {
     required this.color,
   });
 }
+
 
 
 

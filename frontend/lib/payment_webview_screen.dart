@@ -9,11 +9,11 @@ class PaymentWebViewScreen extends StatefulWidget {
   final Function(bool success, Map<String, dynamic>? data) onPaymentComplete;
 
   const PaymentWebViewScreen({
-    Key? key,
+    super.key,
     required this.paymentUrl,
     required this.transactionId,
     required this.onPaymentComplete,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentWebViewScreen> createState() => _PaymentWebViewScreenState();
@@ -209,5 +209,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     );
   }
 }
+
+
 
 

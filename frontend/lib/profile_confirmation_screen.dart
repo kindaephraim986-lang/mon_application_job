@@ -7,10 +7,10 @@ class ProfileConfirmationScreen extends StatefulWidget {
   final Uint8List? photoBytes;
 
   const ProfileConfirmationScreen({
-    Key? key,
+    super.key,
     required this.userData,
     this.photoBytes,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfileConfirmationScreen> createState() => _ProfileConfirmationScreenState();
@@ -304,3 +304,5 @@ class _ProfileConfirmationScreenState extends State<ProfileConfirmationScreen> {
     );
   }
 }
+
+

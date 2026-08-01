@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:typed_data';
 import 'notification_service.dart';
 import 'chat_service.dart';
 import 'profile_image_helper.dart';
+import 'utils/phone_utils_fixed.dart';
 import 'candidature_service.dart';
 import 'realtime_service.dart';
 import 'payment_service.dart';
@@ -14,7 +15,7 @@ import 'auth_screen.dart';
 
 class CompanyDashboard extends StatefulWidget {
   final Map<String, String> initialData;
-  const CompanyDashboard({Key? key, required this.initialData}) : super(key: key);
+  const CompanyDashboard({super.key, required this.initialData});
 
   @override
   State<CompanyDashboard> createState() => _CompanyDashboardState();
@@ -46,6 +47,24 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   final _salaireController = TextEditingController();
 
   String _selectedTypeContrat = 'CDI';
+  String _selectedCompanyDialCode = '+226';
+
+  final List<Map<String, String>> _countryDialCodes = [
+    {'name': 'Burkina Faso', 'dialCode': '+226'},
+    {'name': 'Côte d’Ivoire', 'dialCode': '+225'},
+    {'name': 'Sénégal', 'dialCode': '+221'},
+    {'name': 'Mali', 'dialCode': '+223'},
+    {'name': 'France', 'dialCode': '+33'},
+    {'name': 'Belgique', 'dialCode': '+32'},
+    {'name': 'Canada', 'dialCode': '+1'},
+    {'name': 'États-Unis', 'dialCode': '+1'},
+    {'name': 'Royaume-Uni', 'dialCode': '+44'},
+    {'name': 'Nigeria', 'dialCode': '+234'},
+    {'name': 'Ghana', 'dialCode': '+233'},
+    {'name': 'Togo', 'dialCode': '+228'},
+    {'name': 'Bénin', 'dialCode': '+229'},
+    {'name': 'Niger', 'dialCode': '+227'},
+  ];
 
   @override
   void initState() {
@@ -53,10 +72,35 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     entrepriseData = widget.initialData;
     _refreshCounts();
     _checkSubscription();
+    _loadCurrentProfile();
     // Connect realtime
     try {
       RealtimeService().connect(baseUrl: ApiService.baseUrl.replaceFirst('/api', ''));
-    } catch (e) {}
+    } catch (e) {
+      // Connection error is non-fatal, app will still work
+    }
+  }
+
+  Future<void> _loadCurrentProfile() async {
+    final user = await ApiService.getCurrentUser();
+    if (!mounted || user == null) return;
+
+    final refreshedPhoto = user['photo']?.toString().trim() ?? '';
+
+    setState(() {
+      entrepriseData.addAll({
+        'id': user['id']?.toString() ?? entrepriseData['id'] ?? '',
+        'email': user['email']?.toString() ?? entrepriseData['email'] ?? '',
+        'nom_societe': user['nom_societe']?.toString() ?? user['nom']?.toString() ?? entrepriseData['nom_societe'] ?? '',
+        'nom': user['nom']?.toString() ?? entrepriseData['nom'] ?? '',
+        'telephone': user['telephone']?.toString() ?? entrepriseData['telephone'] ?? '',
+        'domaine': user['domaine']?.toString() ?? entrepriseData['domaine'] ?? '',
+        'adresse': user['adresse']?.toString() ?? entrepriseData['adresse'] ?? '',
+        'villeLieu': user['villeLieu']?.toString() ?? entrepriseData['villeLieu'] ?? '',
+        'photo': refreshedPhoto.isNotEmpty ? refreshedPhoto : (user['photoUrl']?.toString() ?? user['logoUrl']?.toString() ?? entrepriseData['photo'] ?? ''),
+        'logoUrl': user['logoUrl']?.toString() ?? entrepriseData['logoUrl'] ?? '',
+      });
+    });
   }
 
   Future<void> _checkSubscription() async {
@@ -403,7 +447,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     try {
       final convInt = int.tryParse(convId.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
       if (convInt > 0) RealtimeService().joinConversation(convInt);
-    } catch (e) {}
+    } catch (e) {
+      // Realtime join error is non-fatal, messaging will still work
+    }
 
     if (!mounted) return;
     Navigator.push(
@@ -443,6 +489,47 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
     }
   }
 
+  Future<String?> _uploadCompanyLogo(Uint8List bytes, String fileName) async {
+    final uploadResponse = await ApiService.uploadFileBytes(bytes: bytes, fileName: fileName);
+    if (uploadResponse['success'] == true && uploadResponse['url'] != null) {
+      final logoUrl = uploadResponse['url'].toString();
+      final updateResponse = await ApiService.updateProfile(
+        nom: entrepriseData['nom_societe'] ?? entrepriseData['nom'] ?? '',
+        telephone: ensureInternationalPhone(entrepriseData['telephone'] ?? ''),
+        domaine: entrepriseData['domaine'],
+        adresse: entrepriseData['adresse'],
+        villeLieu: entrepriseData['villeLieu'],
+        logoUrl: logoUrl,
+      );
+      if (updateResponse['success'] == true) {
+        setState(() {
+          entrepriseData['photo'] = logoUrl;
+        });
+        return logoUrl;
+      }
+
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logo téléchargé, mais impossible de sauvegarder le profil : ${updateResponse['message'] ?? 'Erreur'}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
+
+    if (!mounted) return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur d\'upload du logo : ${uploadResponse['message'] ?? 'Erreur inconnue'}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return null;
+  }
+
+  
+
   Future<void> _logout() async {
     // Effacer la session
     await ApiService.logout();
@@ -469,7 +556,10 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-                  const ProfileImagePicker(),
+                  ProfileImagePicker(
+                    initialPhotoUrl: entrepriseData['photo'],
+                    onImageUploaded: _uploadCompanyLogo,
+                  ),
                   const SizedBox(height: 15),
                   Text(
                     _companyName,
@@ -667,30 +757,6 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
               ),
             ),
             
-            const SizedBox(height: 16),
-            
-            ElevatedButton.icon(
-              onPressed: () async {
-                final email = _companyEmail;
-                if (email.isEmpty) return;
-                await SubscriptionService.resetSubscription(email, 'company');
-                await _checkSubscription();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Abonnement réinitialisé pour test"),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text("Réinitialiser l'abonnement (test)"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-            ),
           ],
         ),
       ),
@@ -1325,6 +1391,18 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           children: [
             Text("Informations de la Société", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
             const Divider(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Informations de la Société", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900])),
+                TextButton.icon(
+                  onPressed: _openEditCompanyProfileDialog,
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text("Modifier"),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
             _buildProfileRow("Nom de l'entreprise", entrepriseData['nom_societe'] ?? entrepriseData['nom'] ?? 'Non spécifié'),
             _buildProfileRow("Secteur / Domaine", entrepriseData['domaine'] ?? 'Non spécifié'),
             _buildProfileRow("Téléphone", entrepriseData['telephone'] ?? 'Non spécifié'),
@@ -1346,6 +1424,126 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           Expanded(flex: 3, child: Text(value, style: TextStyle(fontSize: 16, color: Colors.blue[900], fontWeight: FontWeight.w500))),
         ],
       ),
+    );
+  }
+
+  void _openEditCompanyProfileDialog() {
+    final nameController = TextEditingController(text: entrepriseData['nom_societe'] ?? entrepriseData['nom']);
+    final telephoneController = TextEditingController(text: entrepriseData['telephone']);
+    final emailController = TextEditingController(text: entrepriseData['email']);
+    final domainController = TextEditingController(text: entrepriseData['domaine']);
+    final addressController = TextEditingController(text: entrepriseData['adresse'] ?? entrepriseData['villeLieu']);
+    String selectedDialCode = _selectedCompanyDialCode;
+
+    final phoneValue = entrepriseData['telephone']?.trim() ?? '';
+    if (phoneValue.startsWith('+')) {
+      final match = RegExp(r'^(\+\d+)').firstMatch(phoneValue);
+      if (match != null) {
+        selectedDialCode = match.group(1)!;
+        telephoneController.text = phoneValue.replaceFirst(match.group(1)!, '').trim();
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modifier la fiche entreprise'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Nom de l\'entreprise'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: domainController,
+                  decoration: const InputDecoration(labelText: 'Secteur / Domaine'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(6)),
+                      child: DropdownButton<String>(
+                        value: selectedDialCode,
+                        underline: const SizedBox.shrink(),
+                        items: _countryDialCodes.map((c) => DropdownMenuItem(value: c['dialCode'], child: Text(c['dialCode']!))).toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            selectedDialCode = v;
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: telephoneController,
+                        decoration: const InputDecoration(labelText: 'Numéro de téléphone'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email professionnel'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: addressController,
+                  decoration: const InputDecoration(labelText: 'Adresse / Ville'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedName = nameController.text.trim();
+                final updatedTelephone = formatPhoneNumber(telephoneController.text.trim(), selectedDialCode);
+                final updatedEmail = emailController.text.trim();
+                final updatedDomaine = domainController.text.trim();
+                final updatedAddress = addressController.text.trim();
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                final result = await ApiService.updateProfile(
+                  nom: updatedName,
+                  telephone: updatedTelephone,
+                  domaine: updatedDomaine,
+                  adresse: updatedAddress,
+                  villeLieu: updatedAddress,
+                  logoUrl: entrepriseData['logoUrl'],
+                );
+                if (!mounted) return;
+                if (result['success'] == true) {
+                  setState(() {
+                    entrepriseData['nom_societe'] = updatedName;
+                    entrepriseData['telephone'] = updatedTelephone;
+                    entrepriseData['email'] = updatedEmail;
+                    entrepriseData['domaine'] = updatedDomaine;
+                    entrepriseData['adresse'] = updatedAddress;
+                    entrepriseData['villeLieu'] = updatedAddress;
+                    _selectedCompanyDialCode = selectedDialCode;
+                  });
+                  navigator.pop();
+                  messenger.showSnackBar(const SnackBar(content: Text('Fiche entreprise mise à jour')));
+                } else {
+                  messenger.showSnackBar(SnackBar(content: Text('Erreur mise à jour : ${result['message'] ?? 'Erreur'}')));
+                }
+              },
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1645,7 +1843,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1691,7 +1889,7 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
 class CompanyChatScreen extends StatefulWidget {
   final String conversationId;
   final Map<String, String> entrepriseData;
-  const CompanyChatScreen({Key? key, required this.conversationId, required this.entrepriseData}) : super(key: key);
+  const CompanyChatScreen({super.key, required this.conversationId, required this.entrepriseData});
 
   @override
   State<CompanyChatScreen> createState() => _CompanyChatScreenState();
@@ -1816,7 +2014,7 @@ class _CompanyChatScreenState extends State<CompanyChatScreen> {
                       child: TextField(
                         controller: _controller,
                         decoration: InputDecoration(
-                          hintText: "Ã‰crivez votre message ici...",
+                          hintText: "Écrivez votre message ici...",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -1845,6 +2043,8 @@ class _CompanyChatScreenState extends State<CompanyChatScreen> {
     );
   }
 }
+
+
 
 
 

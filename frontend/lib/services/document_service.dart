@@ -1,5 +1,6 @@
 /// lib/services/document_service.dart
 /// Service pour gérer l'accès aux documents (CV, CNIB) avec URLs signées
+library;
 
 import 'package:flutter/material.dart';
 import 'api_service.dart';
@@ -154,3 +155,4 @@ class DocumentService {
     }
   }
 }
+
