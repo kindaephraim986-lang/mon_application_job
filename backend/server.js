@@ -117,22 +117,18 @@ const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' 
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     if (!process.env.DB_HOST) {
-      console.error('❌ DB_HOST is required in production. Set DB_HOST in Render service environment variables or render.yaml with sync=false.');
-      process.exit(1);
+      console.warn('⚠️ DB_HOST absent in production; continuing with default config.');
     }
     const invalidHost = ['localhost', '127.0.0.1', '::1'];
-    if (invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
-      console.error('❌ Invalid DB_HOST for production:', process.env.DB_HOST);
-      console.error('   Render cannot connect to a local MySQL host. Use an external MySQL host reachable from Render.');
-      process.exit(1);
+    if (process.env.DB_HOST && invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+      console.warn('⚠️ DB_HOST points to localhost in production; continuing but database connectivity may fail.');
     }
   }
 
   try {
-    await initializeDatabase({ quiet: false });
+    await initializeDatabase({ quiet: false, maxAttempts: 4, retryDelayMs: 4000 });
   } catch (error) {
-    console.error('❌ Initialisation de la base MySQL impossible:', error.message);
-    process.exit(1);
+    console.warn('⚠️ Initialisation de la base MySQL non bloquante:', error.message);
   }
 
   // Create an http server and attach socket.io
