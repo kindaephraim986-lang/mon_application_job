@@ -112,6 +112,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Erreur serveur interne' });
 });
 
+const { getAvailablePort } = require('./utils/port');
 const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
 
 async function startServer() {
@@ -143,9 +144,19 @@ async function startServer() {
   }
 
   if (require.main === module) {
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
-    });
+    const listenPort = async () => {
+      try {
+        const resolvedPort = await getAvailablePort(PORT, '0.0.0.0');
+        server.listen(resolvedPort, '0.0.0.0', () => {
+          console.log(`Serveur actif sur http://0.0.0.0:${resolvedPort}`);
+        });
+      } catch (error) {
+        console.error('❌ Impossible de démarrer le serveur:', error.message);
+        process.exit(1);
+      }
+    };
+
+    listenPort();
   }
 }
 
