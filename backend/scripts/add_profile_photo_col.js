@@ -1,13 +1,17 @@
 const mysql = require('mysql2/promise');
+const { getDatabaseConfig, validateDatabaseConfig } = require('../config/db_config');
 (async () => {
   try {
-    const cfg = {
-      host: process.env.DB_HOST || '127.0.0.1',
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'bddiane_sp'
-    };
+    const cfg = getDatabaseConfig();
+    if (process.env.NODE_ENV === 'production') {
+      const missing = validateDatabaseConfig(cfg);
+      if (missing.length > 0) {
+        throw new Error(
+          `MySQL environment variables required in production: ${missing.join(', ')}. ` +
+          'Set them in Railway service variables or via DATABASE_URL.'
+        );
+      }
+    }
     const conn = await mysql.createConnection(cfg);
     const needed = [
       { name: 'profile_photo_url', sql: "ALTER TABLE candidats ADD COLUMN profile_photo_url VARCHAR(500)" },

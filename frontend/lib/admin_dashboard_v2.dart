@@ -17,11 +17,12 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   List<Map<String, dynamic>> _offers = [];
   List<Map<String, dynamic>> _applications = [];
   List<Map<String, dynamic>> _payments = [];
+  List<Map<String, dynamic>> _subscriptions = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadAllData();
   }
 
@@ -39,6 +40,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
       final offers = await ApiService.getAdminOffers();
       final applications = await ApiService.getAdminApplications();
       final payments = await ApiService.getAdminPayments();
+      final subscriptions = await ApiService.getAdminSubscriptions();
 
       if (!mounted) return;
       setState(() {
@@ -47,6 +49,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
         _offers = offers;
         _applications = applications;
         _payments = payments;
+        _subscriptions = subscriptions;
         _isLoading = false;
       });
     } catch (e) {
@@ -115,6 +118,64 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
     }
   }
 
+  Future<void> _deleteSubscription(int subscriptionId, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'abonnement ?'),
+        content: Text('Supprimer définitivement l\'abonnement de "$name" ?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final result = await ApiService.deleteAdminSubscription(subscriptionId);
+    if (!mounted) return;
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Abonnement supprimé')));
+      await _loadAllData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Erreur')));
+    }
+  }
+
+  Future<void> _deletePayment(int paymentId, String label) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer le paiement ?'),
+        content: Text('Supprimer définitivement le paiement de "$label" ?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final result = await ApiService.deleteAdminPayment(paymentId);
+    if (!mounted) return;
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paiement supprimé')));
+      await _loadAllData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Erreur')));
+    }
+  }
+
   Future<void> _logout() async {
     // Effacer la session
     await ApiService.logout();
@@ -143,6 +204,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             Tab(icon: Icon(Icons.work), text: 'Offres'),
             Tab(icon: Icon(Icons.assignment), text: 'Candidatures'),
             Tab(icon: Icon(Icons.payment), text: 'Paiements'),
+            Tab(icon: Icon(Icons.subscriptions), text: 'Abonnements'),
           ],
         ),
       ),
@@ -156,6 +218,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                 _buildOffersTab(),
                 _buildApplicationsTab(),
                 _buildPaymentsTab(),
+                _buildSubscriptionsTab(),
               ],
             ),
     );
@@ -180,6 +243,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               _buildStatCard('Offres', _stats['totalOffers']?.toString() ?? '0', Icons.work, Colors.orange),
               _buildStatCard('Candidatures', _stats['totalApplications']?.toString() ?? '0', Icons.assignment, Colors.green),
               _buildStatCard('Paiements', _stats['totalPayments']?.toString() ?? '0', Icons.payment, Colors.purple),
+              _buildStatCard('Abonnements', _stats['totalSubscriptions']?.toString() ?? '0', Icons.subscriptions, Colors.teal),
             ],
           ),
           const SizedBox(height: 32),
@@ -226,6 +290,22 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             itemCount: _users.length,
             itemBuilder: (context, index) {
               final user = _users[index];
+              final userType = (user['userType'] as String?) ?? 'inconnu';
+              final subtitleLines = <String>[];
+              subtitleLines.add(user['email'] ?? 'Email inconnu');
+              subtitleLines.add(userType);
+              if (userType == 'candidat') {
+                final filiere = user['filiere_specialite'];
+                if (filiere != null && filiere.toString().isNotEmpty) {
+                  subtitleLines.add('Filière: $filiere');
+                }
+              } else if (userType == 'entreprise') {
+                final domaine = user['domaine_activite'];
+                if (domaine != null && domaine.toString().isNotEmpty) {
+                  subtitleLines.add('Domaine: $domaine');
+                }
+              }
+
               return Card(
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
@@ -237,14 +317,11 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                     ),
                   ),
                   title: Text(user['nom'] ?? 'Sans nom'),
-                  subtitle: Text('${user['email']} • ${user['userType'] ?? 'user'}'),
-                  trailing: PopupMenuButton(
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        child: const Text('Supprimer'),
-                        onTap: () => _deleteUser(int.parse(user['id'].toString()), user['nom'] ?? 'utilisateur'),
-                      ),
-                    ],
+                  subtitle: Text(subtitleLines.join(' • ')),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: 'Supprimer cet inscrit',
+                    onPressed: () => _deleteUser(int.parse(user['id'].toString()), user['nom'] ?? 'utilisateur'),
                   ),
                 ),
               );
@@ -317,12 +394,72 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
             itemCount: _payments.length,
             itemBuilder: (context, index) {
               final payment = _payments[index];
+              final label = payment['nom'] ?? payment['email'] ?? 'Utilisateur';
               return Card(
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
                   title: Text('${payment['montant'] ?? '0'} FCFA'),
-                  subtitle: Text('${payment['nom'] ?? 'Utilisateur'} • ${payment['methode_paiement'] ?? 'Méthode'}'),
-                  trailing: Chip(label: Text(payment['statut'] ?? 'pending')),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$label • ${payment['methode_paiement'] ?? 'Méthode'}'),
+                      const SizedBox(height: 4),
+                      Text('Date: ${payment['date_paiement'] ?? '—'}'),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: 'Supprimer ce paiement',
+                    onPressed: () => _deletePayment(int.parse(payment['id'].toString()), label),
+                  ),
+                ),
+              );
+            },
+          );
+  }
+
+  Widget _buildSubscriptionsTab() {
+    return _subscriptions.isEmpty
+        ? const Center(child: Text('Aucun abonnement'))
+        : ListView.builder(
+            itemCount: _subscriptions.length,
+            itemBuilder: (context, index) {
+              final subscription = _subscriptions[index];
+              final userEmail = subscription['email'] ?? 'Utilisateur inconnu';
+              final userType = subscription['userType'] ?? 'Type inconnu';
+              final userName = subscription['user_name'] ?? subscription['candidat_nom'] ?? subscription['entreprise_nom'] ?? userEmail;
+              final dateDebut = subscription['date_debut'] ?? '—';
+              final dateFin = subscription['date_fin'] ?? '—';
+              final statut = subscription['statut'] ?? '—';
+              final montant = subscription['montant']?.toString() ?? '0';
+              final abonnementTypeRaw = subscription['type_abonnement'] ?? '—';
+              final abonnementType = abonnementTypeRaw == 'candidat_mensuel'
+                  ? 'Candidat mensuel'
+                  : abonnementTypeRaw == 'entreprise_mensuel'
+                      ? 'Entreprise mensuel'
+                      : abonnementTypeRaw;
+
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: ListTile(
+                  title: Text(userName),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$userEmail • $userType • $abonnementType'),
+                      const SizedBox(height: 4),
+                      Text('Statut: $statut', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('Du $dateDebut'),
+                      Text('Au $dateFin'),
+                      Text('Montant: $montant FCFA'),
+                    ],
+                  ),
+                  isThreeLine: true,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: 'Supprimer cet abonnement',
+                    onPressed: () => _deleteSubscription(int.parse(subscription['id'].toString()), userName),
+                  ),
                 ),
               );
             },

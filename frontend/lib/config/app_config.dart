@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 class AppConfig {
   static const String _defaultPublicBaseUrl = 'https://afrijob-backend.onrender.com';
   static const String _defaultLocalBaseUrl = 'http://localhost:3001';
-  static const String _defaultAndroidLocalBaseUrl = 'http://10.0.2.2:3001';
+  static const String _defaultAndroidLocalBaseUrl = 'http://192.168.11.106:3001';
   static const String _defaultIosLocalBaseUrl = 'http://localhost:3001';
   // ==================== ENVIRONNEMENT ====================
   

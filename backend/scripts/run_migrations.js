@@ -1,17 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+}
 const mysql = require('mysql2/promise');
+const { getDatabaseConfig } = require('../config/db_config');
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'migrations');
 
-const DB_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'bddiane_sp',
-  multipleStatements: true,
-};
+const DB_CONFIG = getDatabaseConfig();
 
 (async () => {
   try {

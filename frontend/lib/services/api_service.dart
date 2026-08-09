@@ -995,6 +995,46 @@ class ApiService {
     }
   }
 
+  /// DELETE /api/admin/subscriptions/:id — Supprimer un abonnement
+  static Future<Map<String, dynamic>> deleteAdminSubscription(int subscriptionId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpDelete(
+        '$baseUrl/admin/subscriptions/$subscriptionId',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
+  /// DELETE /api/admin/payments/:id — Supprimer un paiement
+  static Future<Map<String, dynamic>> deleteAdminPayment(int paymentId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return {'success': false, 'message': 'Non authentifié'};
+
+      final response = await _httpDelete(
+        '$baseUrl/admin/payments/$paymentId',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': jsonDecode(response.body)['message'] ?? 'Erreur'};
+    } catch (e) {
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
+
   /// GET /api/admin/offers — Lister toutes les offres
   static Future<List<Map<String, dynamic>>> getAdminOffers() async {
     try {
@@ -1127,6 +1167,29 @@ class ApiService {
       return [];
     } catch (e) {
       Logger.error('Erreur getAdminPayments: $e');
+      return [];
+    }
+  }
+
+  /// GET /api/admin/subscriptions — Lister tous les abonnements
+  static Future<List<Map<String, dynamic>>> getAdminSubscriptions() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return [];
+
+      final response = await _httpGet(
+        '$baseUrl/admin/subscriptions',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final subscriptions = data['subscriptions'] as List?;
+        return subscriptions?.map((s) => Map<String, dynamic>.from(s)).toList() ?? [];
+      }
+      return [];
+    } catch (e) {
+      Logger.error('Erreur getAdminSubscriptions: $e');
       return [];
     }
   }

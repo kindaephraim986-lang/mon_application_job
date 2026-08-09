@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 
 Future<bool> saveBytesToDownloads(Uint8List bytes, String suggestedName) async {
-  final outputPath = await FilePicker.platform.saveFile(
+  final outputPath = await FilePicker.saveFile(
     dialogTitle: 'Enregistrer le fichier',
     fileName: suggestedName,
   );
