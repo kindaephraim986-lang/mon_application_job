@@ -22,6 +22,7 @@ router.get('/stats', async (req, res) => {
     const [offers] = await db.query('SELECT COUNT(*) as total FROM offres');
     const [applications] = await db.query('SELECT COUNT(*) as total FROM candidatures');
     const [payments] = await db.query('SELECT COUNT(*) as total FROM paiements');
+    const [subscriptions] = await db.query('SELECT COUNT(*) as total FROM abonnements');
 
     res.json({
       success: true,
@@ -30,6 +31,7 @@ router.get('/stats', async (req, res) => {
         totalOffers: offers[0]?.total || 0,
         totalApplications: applications[0]?.total || 0,
         totalPayments: payments[0]?.total || 0,
+        totalSubscriptions: subscriptions[0]?.total || 0,
       },
     });
   } catch (error) {
@@ -43,10 +45,24 @@ router.get('/stats', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     const [users] = await db.query(`
-      SELECT id, email, nom, role, type_utilisateur as userType, telephone, 
-             date_creation, date_modification
-      FROM utilisateurs
-      ORDER BY date_creation DESC
+      SELECT u.id,
+             u.email,
+             u.type_utilisateur as userType,
+             u.type_utilisateur as role,
+             u.date_creation,
+             COALESCE(c.nom_complet, e.nom_societe, 'Utilisateur') as nom,
+             COALESCE(c.telephone, e.telephone) as telephone,
+             c.filiere_specialite,
+             c.age,
+             c.domicile,
+             c.sexe,
+             e.domaine_activite,
+             e.adresse_complete,
+             e.ville_lieu
+      FROM utilisateurs u
+      LEFT JOIN candidats c ON u.id = c.id
+      LEFT JOIN entreprises e ON u.id = e.id
+      ORDER BY u.date_creation DESC
     `);
     
     res.json({
@@ -62,7 +78,23 @@ router.get('/users', async (req, res) => {
 router.get('/users/:id', async (req, res) => {
   try {
     const [users] = await db.query(`
-      SELECT * FROM utilisateurs WHERE id = ?
+      SELECT u.id,
+             u.email,
+             u.type_utilisateur as userType,
+             COALESCE(c.nom_complet, e.nom_societe, 'Utilisateur') as nom,
+             COALESCE(c.telephone, e.telephone) as telephone,
+             c.filiere_specialite,
+             c.age,
+             c.domicile,
+             c.sexe,
+             e.domaine_activite,
+             e.adresse_complete,
+             e.ville_lieu,
+             u.date_creation
+      FROM utilisateurs u
+      LEFT JOIN candidats c ON u.id = c.id
+      LEFT JOIN entreprises e ON u.id = e.id
+      WHERE u.id = ?
     `, [req.params.id]);
     
     if (!users || users.length === 0) {
@@ -277,6 +309,62 @@ router.get('/payments', async (req, res) => {
       success: true,
       payments: payments || [],
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// DELETE /api/admin/payments/:id — Supprimer un paiement
+router.delete('/payments/:id', async (req, res) => {
+  try {
+    const [result] = await db.query('DELETE FROM paiements WHERE id = ?', [req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Paiement non trouvé' });
+    }
+
+    res.json({ success: true, message: 'Paiement supprimé' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ===================== ABONNEMENTS =====================
+
+// GET /api/admin/subscriptions — Lister tous les abonnements
+router.get('/subscriptions', async (req, res) => {
+  try {
+    const [subscriptions] = await db.query(`
+      SELECT a.*, u.email, u.type_utilisateur as userType,
+             COALESCE(c.nom_complet, e.nom_societe, u.email) as user_name,
+             c.nom_complet as candidat_nom,
+             e.nom_societe as entreprise_nom
+      FROM abonnements a
+      LEFT JOIN utilisateurs u ON a.utilisateur_id = u.id
+      LEFT JOIN candidats c ON a.utilisateur_id = c.id
+      LEFT JOIN entreprises e ON a.utilisateur_id = e.id
+      ORDER BY a.date_debut DESC
+    `);
+
+    res.json({
+      success: true,
+      subscriptions: subscriptions || [],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// DELETE /api/admin/subscriptions/:id — Supprimer un abonnement
+router.delete('/subscriptions/:id', async (req, res) => {
+  try {
+    const [result] = await db.query('DELETE FROM abonnements WHERE id = ?', [req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Abonnement non trouvé' });
+    }
+
+    res.json({ success: true, message: 'Abonnement supprimé' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

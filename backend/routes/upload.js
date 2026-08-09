@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { protect } = require('../middleware/auth');
+const { validateCNIBUpload } = require('../middleware/cnibValidation');
 
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
 
@@ -112,6 +113,105 @@ router.post('/', uploadSingleFile, async (req, res) => {
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: req.file.size
+    });
+});
+
+/**
+ * POST /api/upload/cnib
+ * Upload et validation stricte de document CNIB
+ * Accepte les uploads anonymes ou authentifiés
+ * Valide que l'image est bien une Carte Nationale d'Identité
+ */
+const cnibUpload = multer({
+    storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB max
+    },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+        
+        if (!allowedExtensions.includes(ext)) {
+            return cb(new Error('Seules les images JPG et PNG sont acceptées pour les documents d\'identité.'));
+        }
+        
+        // Vérifier le type MIME si disponible. Certaines plateformes mobiles envoient application/octet-stream.
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+            if (file.mimetype !== 'application/octet-stream' && !file.mimetype.startsWith('image/')) {
+                console.warn('[CNIB UPLOAD WARNING] unexpected MIME type for CNIB upload:', file.mimetype);
+                return cb(new Error('Type MIME invalide pour les images d\'identité.'));
+            }
+        }
+        
+        cb(null, true);
+    }
+});
+
+const uploadCNIBFile = (req, res, next) => {
+    cnibUpload.single('file')(req, res, err => {
+        if (err) {
+            console.error('[CNIB UPLOAD ERROR]', err && err.message ? err.message : err);
+            const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+            return res.status(status).json({ 
+                success: false, 
+                message: err.message || 'Erreur lors de l\'envoi du fichier d\'identité.',
+                error: 'FILE_UPLOAD_ERROR'
+            });
+        }
+        next();
+    });
+};
+
+router.post('/cnib', uploadCNIBFile, validateCNIBUpload, async (req, res) => {
+    try {
+        // Lire le token d'authentification si disponible
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            const token = req.headers.authorization.split(' ')[1];
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'afrijob_dev_secret');
+                if (decoded && decoded.id) {
+                    req.user = { id: decoded.id, type_utilisateur: decoded.type_utilisateur || null };
+                }
+            } catch (e) {
+                console.warn('[CNIB UPLOAD DEBUG] invalid token provided, proceeding as anonymous');
+            }
+        }
+    } catch (e) {
+        // ignore token parsing errors
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ 
+            success: false,
+            message: 'Aucun fichier reçu.',
+            error: 'NO_FILE_UPLOADED'
+        });
+    }
+
+    console.log('[CNIB UPLOAD] req.file:', { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size });
+    console.log('[CNIB UPLOAD] validation passed:', !!req.cnibValidated);
+
+    if (!req.cnibValidated) {
+        // Le fichier n'a pas passé la validation CNIB
+        return res.status(400).json({ 
+            success: false,
+            message: 'Le fichier uploadé n\'est pas une Carte Nationale d\'Identité valide.',
+            error: 'DOCUMENT_TYPE_NOT_SUPPORTED'
+        });
+    }
+
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    return res.status(201).json({
+        success: true,
+        message: 'Document d\'identité validé et uploadé avec succès',
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date().toISOString()
     });
 });
 

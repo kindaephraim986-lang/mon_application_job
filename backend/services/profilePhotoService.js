@@ -55,7 +55,7 @@ const saveProfilePhoto = async (candidatId, imageBuffer, originalName) => {
     // Mettre à jour le candidat avec la nouvelle photo et cache buster
     await db.query(
       `UPDATE candidats 
-       SET profile_photo_url = ?, photo_cache_buster = ?, last_photo_update = NOW()
+       SET photo_profil_url = ?, photo_cache_buster = ?, last_photo_update = NOW()
        WHERE id = ?`,
       [`/uploads/profile-photos/${filename}`, cacheBuster, candidatId]
     );
@@ -94,7 +94,22 @@ const getCurrentProfilePhoto = async (candidatId) => {
         photoUrl: photo.photo_url,
         photoBytes: photo.photo_bytes,
         uploadedAt: photo.uploaded_at,
-        cacheBuster: `${photo.id}-${Math.floor(photo.updated_at.getTime() / 1000)}`
+        cacheBuster: photo.photo_cache_buster || `${photo.id}`
+      };
+    }
+
+    const [candidat] = await db.query(
+      `SELECT profile_photo_url, photo_cache_buster, last_photo_update FROM candidats WHERE id = ?`,
+      [candidatId]
+    );
+
+    if (candidat && candidat.length > 0 && candidat[0].profile_photo_url) {
+      return {
+        success: true,
+        photoId: null,
+        photoUrl: candidat[0].profile_photo_url,
+        uploadedAt: candidat[0].last_photo_update,
+        cacheBuster: candidat[0].photo_cache_buster || `${candidatId}`
       };
     }
 

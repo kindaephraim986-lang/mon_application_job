@@ -1,7 +1,9 @@
 /// lib/services/api_service_extended.dart
 /// Extension du ApiService avec les nouvelles méthodes (photos, notifications, documents)
+library;
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +15,7 @@ class ApiServiceExtended {
   // ===================== PHOTOS DE PROFIL =====================
 
   /// Uploader une photo de profil
-  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes) async {
+  static Future<Map<String, dynamic>> uploadProfilePhoto(Uint8List imageBytes, String filename) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConfig.tokenKey) ?? '';
@@ -23,10 +25,39 @@ class ApiServiceExtended {
       if (token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
+
+      String safeFilename = filename.trim().isNotEmpty ? filename.trim() : 'profile_photo.jpg';
+      String extension = '';
+      final dotIndex = safeFilename.lastIndexOf('.');
+      if (dotIndex != -1 && dotIndex < safeFilename.length - 1) {
+        extension = safeFilename.substring(dotIndex + 1).toLowerCase();
+      }
+
+      String mimeType = 'image/jpeg';
+      switch (extension) {
+        case 'png':
+          mimeType = 'image/png';
+          break;
+        case 'gif':
+          mimeType = 'image/gif';
+          break;
+        case 'webp':
+          mimeType = 'image/webp';
+          break;
+        case 'jpg':
+        case 'jpeg':
+        default:
+          mimeType = 'image/jpeg';
+      }
+
+      final parts = mimeType.split('/');
+      final mediaType = MediaType(parts[0], parts[1]);
+
       request.files.add(http.MultipartFile.fromBytes(
         'photo',
         imageBytes,
-        filename: 'profile_photo.jpg',
+        filename: safeFilename,
+        contentType: mediaType,
       ));
 
       final response = await request.send();
@@ -40,10 +71,12 @@ class ApiServiceExtended {
         };
       }
 
+      final decoded = body.isNotEmpty ? jsonDecode(body) : null;
       return {
         'success': false,
-        'message': 'Erreur lors de l\'upload',
+        'message': decoded != null ? decoded['message'] ?? 'Erreur lors de l\'upload' : 'Erreur lors de l\'upload',
         'statusCode': response.statusCode,
+        'body': body,
       };
     } catch (error) {
       return {
@@ -473,3 +506,4 @@ class ApiServiceExtended {
 
   // ===================== HELPER METHODS =====================
 }
+

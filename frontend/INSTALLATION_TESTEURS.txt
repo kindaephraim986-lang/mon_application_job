@@ -1,0 +1,20 @@
+Instructions d'installation pour les testeurs Android
+===================================================
+
+1. Téléchargez le fichier APK correspondant à votre téléphone.
+   - Si votre téléphone est récent (Android 64 bits), prenez : app-arm64-v8a-release.apk
+   - Si vous avez un téléphone plus ancien, prenez : app-armeabi-v7a-release.apk
+   - Si vous utilisez un émulateur ou un PC Android, vous pouvez utiliser : app-x86_64-release.apk
+
+2. Sur votre téléphone Android, ouvrez le fichier APK.
+
+3. Si Android vous demande d'autoriser l'installation depuis une source inconnue :
+   - Activez "Sources inconnues" ou "Installer des applications depuis cette source".
+
+4. Installez l'application.
+
+5. Ouvrez l'application et testez.
+
+Note importante :
+L'application est configurée pour communiquer avec le backend public :
+https://afrijob-backend.onrender.com

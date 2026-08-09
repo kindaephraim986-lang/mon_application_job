@@ -1,5 +1,6 @@
 /// lib/services/notification_service_flutter.dart
 /// Service pour gérer les notifications côté client
+library;
 
 import 'package:flutter/material.dart';
 import 'api_service.dart';
@@ -248,3 +249,4 @@ class NotificationServiceFlutter {
 }
 
 // (imports en tête de fichier)
+

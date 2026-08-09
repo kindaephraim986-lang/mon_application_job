@@ -1,0 +1,60 @@
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.example.mon_application_job"
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        applicationId = "com.example.mon_application_job"
+        minSdk = flutter.minSdkVersion
+        targetSdk = 36
+        ndkVersion = "28.2.13676358"
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // Use release signingConfig when key.properties is provided
+            try {
+                signingConfig signingConfigs.release
+            } catch (Exception e) {
+                signingConfig = signingConfigs.getByName("debug")
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties.getProperty('keyAlias', 'upload')
+            keyPassword keystoreProperties.getProperty('keyPassword', 'android')
+            storeFile file(keystoreProperties.getProperty('storeFile', 'app/keystore.jks'))
+            storePassword keystoreProperties.getProperty('storePassword', 'android')
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}

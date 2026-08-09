@@ -1,0 +1,159 @@
+📦 MON_APPLICATION_JOB - PACKAGE ANDROID FINAL
+===============================================
+
+CONTENU DU PACKAGE:
+✅ app-release.apk (l'application compilée)
+✅ GUIDE_TEST_ANDROID.txt (comptes de test et fonctionnalités)
+✅ FIX_ERREUR_CONNEXION.txt (solution pour l'erreur réseau)
+
+ERREUR ACTUELLE:
+================
+"Impossible de se connecter au serveur"
+Serveur: https://afrijob-backend.onrender.com/api
+
+CAUSE:
+L'application a été compilée avec la configuration par défaut en production.
+Le backend (Node.js) tourne localement sur VOTRE PC à 192.168.11.100:3001
+
+SOLUTION ETAPE PAR ETAPE:
+=========================
+
+ETAPE 1: VERIFIER LA CONNECTIVITE
+----------------------------------
+
+A. Sur votre PC (le serveur):
+   1. Ouvrez PowerShell
+   2. Tapez: ipconfig
+   3. Notez votre IP sous "IPv4 Address" (cherchez 192.168.x.x)
+      Si vous ne voyez pas 192.168.11.100, votre IP est différente!
+   
+   4. Tapez: netstat -ano | Select-String "3001"
+   5. Vous devriez voir: "TCP 0.0.0.0:3001 0.0.0.0:0 LISTENING"
+      Si le backend n'écoute pas, relancez-le!
+
+B. Sur votre téléphone (même Wi-Fi):
+   1. Allez dans Paramètres > WiFi
+   2. Cliquez sur votre réseau > Propriétés
+   3. Notez l'IP du téléphone (ex: 192.168.11.50)
+   4. Assurez-vous que PC et téléphone commencent par 192.168.11.x
+      (Les 2 premiers octets DOIVENT être identiques!)
+
+C. Test de connectivité téléphone → PC:
+   1. Ouvrez un navigateur sur le téléphone
+   2. Tapez: http://192.168.11.100:3001/
+   3. Si vous voyez une page d'erreur ou une réponse, c'est BON!
+   4. Si le page ne charge pas:
+      - Le Wi-Fi n'est pas connecté au même réseau
+      - Le firewall Windows bloque le port 3001
+      - Le backend n'écoute pas
+
+ETAPE 2: FIXER LE FIREWALL (si test de connectivité échoue)
+------------------------------------------------------------
+
+A. Ouvrir le Firewall Windows:
+   1. Appuyez sur Win+R
+   2. Tapez: wf.msc
+   3. Cliquez OK
+
+B. Créer une règle pour autoriser le port 3001:
+   1. Cliquez "Règles de trafic entrant"
+   2. Cliquez "Nouvelle règle..."
+   3. Sélectionnez "Port" → Suivant
+   4. Sélectionnez "TCP"
+   5. Sélectionnez "Ports spécifiques" et tapez: 3001
+   6. Sélectionnez "Autoriser la connexion" → Suivant
+   7. Cochez tous les profils → Suivant
+   8. Nom: "Allow Node.js Backend" → Terminer
+
+C. Relancez le test de connectivité
+
+ETAPE 3: INSTALLER ET TESTER L'APP
+------------------------------------
+
+A. Installation sur téléphone:
+   1. Connectez le téléphone à l'ordinateur par USB
+   2. Ouvrez PowerShell en tant qu'administrateur
+   3. Tapez:
+      adb install C:\Users\SYST\Desktop\Job_Research\frontend\app-release.apk
+   4. Attendez le message "Success"
+
+B. Lancer l'application:
+   1. Ouvrez l'app "Mon Application Job" sur le téléphone
+   2. Si elle affiche l'erreur de serveur:
+      - Fermez l'app (balayez vers le haut)
+      - Attendez 5 secondes
+      - Relancez l'app
+      - Cliquez "Réessayer"
+
+C. Si ça marche toujours pas:
+   - Allez au fichier FIX_ERREUR_CONNEXION.txt
+
+ETAPE 4: UTILISER L'APPLICATION
+---------------------------------
+
+Comptes de test:
+  Candidat:
+    Email: ephraim@example.com
+    Mot de passe: password123
+    
+  Entreprise:
+    Email: contact@techcorp.com
+    Mot de passe: password123
+
+Fonctionnalités à tester:
+✅ Inscription (candidat/entreprise)
+✅ Connexion
+✅ Navigation entre offres/candidatures
+✅ Upload de CV et photos
+✅ Messagerie en temps réel
+✅ Système de paiement
+
+NOTES TECHNIQUES:
+=================
+
+1. L'app est compilée en RELEASE (optimisée et compressée)
+   - Taille: 55 Mo
+   - Performance: Optimale
+   - Debug: Désactivé
+
+2. Configuration réseau:
+   - L'app cherche le serveur à: http://192.168.11.100:3001
+   - Cette IP est celle du PC où s'exécute Node.js
+   - Change automatiquement en production (https://afrijob-backend.onrender.com)
+
+3. Base de données:
+   - Tables: users, offers, applications, conversations, messages, etc.
+   - Authentification: JWT (tokens sécurisés)
+   - Paiements: Stripe (test mode)
+
+PROBLEME DE BUILD:
+===================
+
+Si vous avez besoin de recompiler:
+  1. Le projet utilise: Flutter 3.44.4, Dart 3.12.2, AGP 8.11.1
+  2. Les problèmes actuels de compilation Android sont liés à l'embedder v1
+  3. Solution: Contactez-moi avec le message d'erreur exact
+
+SHAREPOINT SUR WHATSAPP:
+========================
+
+Pour envoyer ce package:
+1. Compressez le dossier 'mon_application_job_ANDROID_FINAL.zip'
+2. Partagez le fichier ZIP par WhatsApp/Drive/OneDrive
+3. L'utilisateur teste peut extraire et suivre ce guide
+4. Contact d'aide: ephraim@example.com
+
+DERNIER RECOURS:
+================
+
+Si rien ne marche:
+1. Désinstallez l'app: adb uninstall com.example.mon_application_job
+2. Redémarrez le téléphone et le PC
+3. Vérifiez que le Wi-Fi 5GHz est activé (Wi-Fi 2.4GHz peut être moins stable)
+4. Vérifiez que le VPN n'est pas actif
+5. Essayez une autre connexion Wi-Fi si disponible
+
+Date: 2025
+Version: Final Release v1.0
+Auteur: Ephraim
+Support: ephraim@example.com

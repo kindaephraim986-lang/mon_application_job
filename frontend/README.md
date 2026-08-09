@@ -1,4 +1,4 @@
-# job_research
+# job_research_frontend
 
 A new Flutter project.
 

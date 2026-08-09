@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   Widget _buildStory(String initials, String name) {
     return Column(
@@ -167,5 +167,6 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
 
 

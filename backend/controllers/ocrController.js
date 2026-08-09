@@ -2,6 +2,70 @@ const fs = require('fs');
 const { createWorker } = require('tesseract.js');
 const { compareOcrData } = require('../utils/ocrCompare');
 
+/**
+ * Valide si le texte extrait provient d'une Carte Nationale d'Identité (CNIB)
+ * @param {string} text - Texte extrait par OCR
+ * @returns {object} Validation result with success boolean and message
+ */
+const validateCNIBDocument = (text) => {
+  if (!text || typeof text !== 'string') {
+    return {
+      isValid: false,
+      message: 'Aucun texte détecté dans l\'image. Veuillez fournir une image claire.'
+    };
+  }
+
+  // Normaliser le texte pour la comparaison
+  const normalizedText = text.toLowerCase().trim();
+
+  // Indicateurs clés d'une CNIB/CNI/Carte d'identité
+  const cnibIndicators = [
+    'carte nationale',
+    'carte d\'identite',
+    'carte d\'identité',
+    'cnib',
+    'cni',
+    'identité',
+    'identite'
+  ];
+
+  // Vérifier si le texte contient au moins un indicateur d'une CNI
+  const hasCNIIndicator = cnibIndicators.some(indicator => normalizedText.includes(indicator));
+
+  if (!hasCNIIndicator) {
+    return {
+      isValid: false,
+      message: 'Cette image n\'est pas une Carte Nationale d\'Identité. Veuillez fournir une image de CNIB valide (recto ou verso).'
+    };
+  }
+
+  // Vérifier si le document a des éléments typiques d'une CNIB:
+  // - Numéro de pièce (pattern alphanumeric)
+  // - Date (format DD/MM/YYYY ou DD-MM-YYYY)
+  // - Nom et prénom
+  const datePattern = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/;
+  const hasDatePattern = datePattern.test(text);
+
+  // Pattern pour détecter un numéro de pièce d'identité (généralement commençant par des lettres)
+  const identityNumberPattern = /[A-Z]{2}\d+|N°|numéro|numero|num\b/i;
+  const hasIdentityNumber = identityNumberPattern.test(text);
+
+  // Un minimum d'indicateurs doit être présent
+  const indicatorCount = (hasCNIIndicator ? 1 : 0) + (hasDatePattern ? 1 : 0) + (hasIdentityNumber ? 1 : 0);
+
+  if (indicatorCount < 2) {
+    return {
+      isValid: false,
+      message: 'L\'image fournie ne semble pas être une Carte d\'Identité valide. Assurez-vous que l\'image est claire et contient tous les éléments de la CNIB.'
+    };
+  }
+
+  return {
+    isValid: true,
+    message: 'Image de CNIB validée avec succès'
+  };
+};
+
 const verifyDocumentData = async (req, res) => {
   try {
     const { userData, ocrData } = req.body;
@@ -60,10 +124,24 @@ const extractDocumentText = async (req, res) => {
 
     const buffer = fs.readFileSync(filePath);
     const { data } = await worker.recognize(buffer);
+    const extractedText = data.text || '';
+
+    // Valider que le document est une CNIB
+    const validation = validateCNIBDocument(extractedText);
+    
+    if (!validation.isValid) {
+      // Rejeter l'image qui n'est pas une CNIB
+      return res.status(400).json({
+        success: false,
+        message: validation.message,
+        error: 'DOCUMENT_TYPE_NOT_SUPPORTED'
+      });
+    }
 
     return res.json({
       success: true,
-      text: data.text || ''
+      text: extractedText,
+      message: validation.message
     });
   } catch (error) {
     console.error('OCR EXTRACTION ERROR:', error);

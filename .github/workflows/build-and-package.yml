@@ -1,0 +1,56 @@
+name: Build APK Debug and Package DB Dump
+
+on:
+  workflow_dispatch:
+    inputs:
+      mysql_host:
+        description: 'MySQL host (optional, leave blank to skip DB export)'
+        required: false
+      mysql_user:
+        description: 'MySQL user (optional)'
+        required: false
+      mysql_password:
+        description: 'MySQL password (optional)'
+        required: false
+      mysql_database:
+        description: 'MySQL database name (default bddiane_sp)'
+        required: false
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flutter SDK
+        run: |
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1
+          echo "${{ github.workspace }}/flutter/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: frontend
+
+      - name: Build debug APK
+        run: flutter build apk --debug --target-platform android-arm,android-arm64
+        working-directory: frontend
+
+      - name: Export MySQL dump (optional)
+        if: ${{ github.event.inputs.mysql_host != '' }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y mariadb-client
+          mysqldump -h "${{ github.event.inputs.mysql_host }}" -u "${{ github.event.inputs.mysql_user }}" -p"${{ github.event.inputs.mysql_password }}" "${{ github.event.inputs.mysql_database || 'bddiane_sp' }}" > bddiane_sp.sql
+
+      - name: Package files
+        run: |
+          mkdir -p package
+          cp frontend/build/app/outputs/flutter-apk/app-debug.apk package/
+          if [ -f bddiane_sp.sql ]; then cp bddiane_sp.sql package/; fi
+          cd package && zip -r ../mon_application_job_ready.zip .
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mon_application_job_ready
+          path: mon_application_job_ready.zip

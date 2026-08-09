@@ -4,7 +4,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { initializeDatabase } = require('./scripts/initialize_database');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '.env') });
+}
 
 const authRoutes = require('./routes/auth');
 const offersRoutes = require('./routes/offers');
@@ -110,27 +112,51 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Erreur serveur interne' });
 });
 
+const { getAvailablePort } = require('./utils/port');
 const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
 
 async function startServer() {
-  if (process.env.NODE_ENV === 'production' && !process.env.DB_HOST) {
-    console.error('❌ DB_HOST is required in production. Set DB_HOST in Render service environment variables or render.yaml with sync=false.');
-    process.exit(1);
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.DB_HOST) {
+      console.warn('⚠️ DB_HOST absent in production; continuing with default config.');
+    }
+    const invalidHost = ['localhost', '127.0.0.1', '::1'];
+    if (process.env.DB_HOST && invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+      console.warn('⚠️ DB_HOST points to localhost in production; continuing but database connectivity may fail.');
+    }
   }
 
   try {
-    if (process.env.DB_HOST) {
-      await initializeDatabase({ quiet: false });
-    }
+    await initializeDatabase({ quiet: false, maxAttempts: 4, retryDelayMs: 4000 });
   } catch (error) {
-    console.error('❌ Initialisation de la base MySQL impossible:', error.message);
-    process.exit(1);
+    console.warn('⚠️ Initialisation de la base MySQL non bloquante:', error.message);
+  }
+
+  // Create an http server and attach socket.io
+  const http = require('http');
+  const server = http.createServer(app);
+  const { init } = require('./socket');
+  try {
+    init(server);
+    console.log('Socket.IO initialisé');
+  } catch (e) {
+    console.warn('Impossible d\'initialiser Socket.IO:', e.message);
   }
 
   if (require.main === module) {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
-    });
+    const listenPort = async () => {
+      try {
+        const resolvedPort = await getAvailablePort(PORT, '0.0.0.0');
+        server.listen(resolvedPort, '0.0.0.0', () => {
+          console.log(`Serveur actif sur http://0.0.0.0:${resolvedPort}`);
+        });
+      } catch (error) {
+        console.error('❌ Impossible de démarrer le serveur:', error.message);
+        process.exit(1);
+      }
+    };
+
+    listenPort();
   }
 }
 

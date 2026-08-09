@@ -1,5 +1,6 @@
 /// lib/widgets/profile_photo_widget.dart
 /// Widget pour afficher et gérer la photo de profil
+library;
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,13 +10,15 @@ class ProfilePhotoWidget extends StatefulWidget {
   final bool editable;
   final VoidCallback? onPhotoUpdated;
   final String candidatId;
+  final String? initialPhotoUrl;
 
   const ProfilePhotoWidget({
-    Key? key,
+    super.key,
     this.editable = true,
     this.onPhotoUpdated,
     required this.candidatId,
-  }) : super(key: key);
+    this.initialPhotoUrl,
+  });
 
   @override
   State<ProfilePhotoWidget> createState() => _ProfilePhotoWidgetState();
@@ -29,11 +32,22 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialPhotoUrl != null && widget.initialPhotoUrl!.isNotEmpty) {
+      _photoUrl = widget.initialPhotoUrl;
+    }
     _loadPhotoUrl();
   }
 
   void _loadPhotoUrl() {
     _photoFuture = ProfilePhotoService.getCurrentPhoto();
+    _photoFuture.then((result) {
+      if (!mounted) return;
+      if (result['success'] == true && result['photoUrl'] != null) {
+        setState(() {
+          _photoUrl = result['photoUrl'] as String;
+        });
+      }
+    });
   }
 
   Future<void> _pickAndUploadPhoto() async {
@@ -47,9 +61,10 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
 
       // Lire le fichier en bytes
       final imageBytes = await pickedFile.readAsBytes();
+      final filename = pickedFile.name.isNotEmpty ? pickedFile.name : 'profile_photo.jpg';
 
       // Uploader la photo
-      final result = await ProfilePhotoService.uploadProfilePhoto(imageBytes);
+      final result = await ProfilePhotoService.uploadProfilePhoto(imageBytes, filename);
 
       if (mounted) {
         setState(() => _isUploading = false);
@@ -186,7 +201,7 @@ class _ProfilePhotoWidgetState extends State<ProfilePhotoWidget> {
 class PhotoHistoryDialog extends StatelessWidget {
   final String candidatId;
 
-  const PhotoHistoryDialog({Key? key, required this.candidatId}) : super(key: key);
+  const PhotoHistoryDialog({super.key, required this.candidatId});
 
   @override
   Widget build(BuildContext context) {
@@ -309,3 +324,5 @@ class PhotoHistoryDialog extends StatelessWidget {
     );
   }
 }
+
+

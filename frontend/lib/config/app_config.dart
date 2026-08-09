@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 
 /// Configuration globale de l'application Job research
 class AppConfig {
+  static const String _defaultPublicBaseUrl = 'https://afrijob-backend.onrender.com';
+  static const String _defaultLocalBaseUrl = 'http://localhost:3001';
+  static const String _defaultAndroidLocalBaseUrl = 'http://192.168.11.106:3001';
+  static const String _defaultIosLocalBaseUrl = 'http://localhost:3001';
   // ==================== ENVIRONNEMENT ====================
   
   /// L'environnement actuel (development, production)
@@ -10,21 +14,32 @@ class AppConfig {
     defaultValue: bool.fromEnvironment('dart.vm.product') ? 'production' : 'development',
   );
 
-  /// URL API personnalisée via --dart-define=API_BASE_URL
-  static const String _customBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+  /// URL API personnalisée via --dart-define=API_BASE_URL.
+  /// Pour un téléphone réel sur le même réseau Wi‑Fi, passez l’IP du PC hôte.
+  static const String _customBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
 
-  static String _normalizeBaseUrl(String baseUrl) {
+  /// URL API de production par défaut si la variable d'environnement n'est pas définie.
+  /// Utilise le backend déjà documenté dans le projet.
+  static const String _productionBaseUrl = _defaultPublicBaseUrl;
+
+  static String normalizeBaseUrl(String baseUrl) {
     final trimmed = baseUrl.trim();
     if (trimmed.isEmpty) {
       return '';
     }
-    if (trimmed.endsWith('/api')) {
-      return trimmed;
+
+    final withoutTrailingSlash = trimmed.endsWith('/')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+
+    if (withoutTrailingSlash.endsWith('/api')) {
+      return withoutTrailingSlash;
     }
-    if (trimmed.endsWith('/')) {
-      return '${trimmed}api';
-    }
-    return '$trimmed/api';
+
+    return '$withoutTrailingSlash/api';
   }
   
   /// Version de l'application
@@ -33,39 +48,57 @@ class AppConfig {
   // ==================== SERVEUR ====================
   
   /// Configuration du serveur selon l'environnement
-  static String get baseUrl {
-    if (_customBaseUrl.isNotEmpty) {
-      return _normalizeBaseUrl(_customBaseUrl);
+  static String resolveBaseUrl({
+    required String environment,
+    required TargetPlatform platform,
+    required bool isWeb,
+    required String customBaseUrl,
+  }) {
+    if (customBaseUrl.isNotEmpty) {
+      return normalizeBaseUrl(customBaseUrl);
     }
 
-    if (kIsWeb) {
+    if (environment == 'production') {
+      return normalizeBaseUrl(_productionBaseUrl);
+    }
+
+    if (platform == TargetPlatform.android) {
+      return normalizeBaseUrl(_defaultAndroidLocalBaseUrl);
+    }
+
+    if (platform == TargetPlatform.iOS) {
+      return normalizeBaseUrl(_defaultIosLocalBaseUrl);
+    }
+
+    if (isWeb) {
       final origin = Uri.base.origin;
       if (origin.startsWith('http://') || origin.startsWith('https://')) {
         final uri = Uri.parse(origin);
-        // In development, Flutter web runs on its own port, so we need to
-        // call the backend on localhost:3001 instead of the web-dev server.
         if (environment == 'development' && (uri.host == 'localhost' || uri.host == '127.0.0.1') && uri.port != 3001) {
-          return 'http://localhost:3001/api';
+          return '$_defaultLocalBaseUrl/api';
         }
-        // In production, prefer the same-origin API when the frontend is served
-        // by the backend server. A custom API URL can still be injected via
-        // --dart-define=API_BASE_URL for deployments on a separate domain.
         return '$origin/api';
       }
-      return 'http://localhost:3001/api';
+      return '$_defaultLocalBaseUrl/api';
     }
 
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:3001/api'; // Android Emulator
-      case TargetPlatform.iOS:
+    switch (platform) {
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
       case TargetPlatform.linux:
-        return 'http://localhost:3001/api';
+        return '$_defaultLocalBaseUrl/api';
       default:
-        return 'http://localhost:3001/api';
+        return normalizeBaseUrl(_defaultPublicBaseUrl);
     }
+  }
+
+  static String get baseUrl {
+    return resolveBaseUrl(
+      environment: environment,
+      platform: defaultTargetPlatform,
+      isWeb: kIsWeb,
+      customBaseUrl: _customBaseUrl,
+    );
   }
   
   /// Timeout des requêtes (en secondes)
@@ -181,5 +214,6 @@ enum PlatformType {
 // La détection précise des plateformes natives peut être ajoutée
 // ultérieurement avec des imports conditionnels. Pour l'instant
 // on détecte automatiquement le web via `kIsWeb`.
+
 
 

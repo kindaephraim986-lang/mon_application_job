@@ -3,7 +3,7 @@ services:
     name: job-research
     env: docker
     dockerfilePath: ./Dockerfile
-    branch: main
+    branch: feature/reactive-offers-ui-fix
     autoDeploy: true
     plan: starter
     healthCheckPath: /api/health
@@ -19,6 +19,7 @@ services:
         sync: false
         # Exemple: https://job-research.onrender.com
       - key: DB_HOST
+        value: "102.179.222.45"
         sync: false
         # Exemple: db.example.com (MySQL externe, pas localhost)
       - key: DB_PORT

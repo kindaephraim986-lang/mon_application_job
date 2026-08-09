@@ -1,37 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-const mysql = require('mysql2/promise');
-
-function getDatabaseConfig() {
-  const config = {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT, 10) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    connectTimeout: 10000,
-    multipleStatements: true,
-  };
-
-  if (process.env.DB_SSL === 'true') {
-    config.ssl = { rejectUnauthorized: false };
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    const missing = [];
-    if (!process.env.DB_HOST) missing.push('DB_HOST');
-    if (!process.env.DB_USER) missing.push('DB_USER');
-    if (!process.env.DB_NAME) missing.push('DB_NAME');
-    if (missing.length > 0) {
-      throw new Error(
-        `MySQL environment variables required in production: ${missing.join(', ')}. ` +
-        'Set them in Render service environment variables or render.yaml with sync=false.'
-      );
-    }
-  }
-
-  return config;
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 }
+const mysql = require('mysql2/promise');
+const { getDatabaseConfig, validateDatabaseConfig } = require('../config/db_config');
 
 function getMigrationFiles() {
   const migrationsDir = path.join(__dirname, '..', 'migrations');
@@ -52,7 +25,13 @@ async function initializeDatabase(options = {}) {
   const quiet = Boolean(options.quiet);
 
   const config = getDatabaseConfig();
-  let attempt = 1;
+  const missing = validateDatabaseConfig(config);
+  if (process.env.NODE_ENV === 'production' && missing.length > 0) {
+    throw new Error(
+      `MySQL environment variables required in production: ${missing.join(', ')}. ` +
+      'Set them in Railway service variables or via DATABASE_URL.'
+    );
+  }
 
   while (attempt <= maxAttempts) {
     let connection;
@@ -62,16 +41,31 @@ async function initializeDatabase(options = {}) {
       await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
       await connection.query(`USE \`${dbName}\``);
 
-      const schemaPath = path.join(__dirname, '..', '..', 'bddiane_sp.sql');
-      if (fs.existsSync(schemaPath)) {
+      const schemaPathCandidates = [
+        path.join(__dirname, '..', '..', 'bddiane_sp.sql'),
+        path.join(__dirname, '..', 'bddiane_sp.sql'),
+        path.join(__dirname, '..', '..', '..', 'bddiane_sp.sql'),
+      ];
+      const schemaPath = schemaPathCandidates.find(fs.existsSync);
+      if (schemaPath) {
         const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        await connection.query(schemaSql);
+        if (schemaSql.trim()) {
+          await connection.query(schemaSql);
+        }
+      } else {
+        console.warn('⚠️ Fichier de schéma MySQL non trouvé. Aucun SQL initial n’a été appliqué.');
       }
 
       for (const migrationFile of getMigrationFiles()) {
         const sql = fs.readFileSync(migrationFile, 'utf8');
         if (sql.trim()) {
-          await connection.query(sql);
+          try {
+            await connection.query(sql);
+          } catch (migrationError) {
+            if (!quiet) {
+              console.warn(`⚠️ Migration ignorée ${path.basename(migrationFile)}: ${migrationError.message}`);
+            }
+          }
         }
       }
 

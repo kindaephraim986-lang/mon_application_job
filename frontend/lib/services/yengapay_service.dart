@@ -78,13 +78,18 @@ class YengaPayService {
   // Refund un paiement
   Future<bool> refundPayment(String transactionId, {double? amount, String? reason}) async {
     try {
+      final body = <String, dynamic>{};
+      if (amount != null) {
+        body['amount'] = amount.toString();
+      }
+      if (reason != null) {
+        body['reason'] = reason;
+      }
+
       final response = await http.post(
         Uri.parse('${AppConstants.yengapayBaseUrl}/payments/$transactionId/refund'),
         headers: _headers,
-        body: jsonEncode({
-          if (amount != null) 'amount': amount.toString(),
-          if (reason != null) 'reason': reason,
-        }),
+        body: jsonEncode(body),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -116,5 +121,6 @@ class YengaPayService {
     }
   }
 }
+
 
 

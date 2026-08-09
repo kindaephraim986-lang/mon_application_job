@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>Rapport de soutenance</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr><w:r><w:t>Application de recherche d’emploi – Job Research</w:t></w:r></w:p>
+    <w:p><w:r><w:t> </w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>1. Introduction</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Ce projet consiste en la conception et le développement d’une application web de recherche d’emploi permettant de mettre en relation les candidats et les entreprises. L’application a été pensée pour offrir une expérience simple, rapide et moderne, adaptée à un usage réel dans un contexte de recrutement numérique.</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Le besoin initial était de proposer une plateforme capable de faciliter l’accès aux offres, la gestion des profils et la communication entre les différentes parties prenantes.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>2. Problématique et objectifs</w:t></w:r></w:p>
+    <w:p><w:r><w:t>La recherche d’emploi en ligne est souvent confrontée à des difficultés de centralisation, d’accessibilité et d’ergonomie. Les candidats ont besoin d’un espace clair pour consulter les offres et postuler, tandis que les recruteurs ont besoin d’outils efficaces pour identifier les profils correspondants.</w:t></w:r></w:p>
+    <w:p><w:r><w:t>L’objectif principal de ce projet est donc de mettre en place une solution complète, fonctionnelle et ergonomique qui réponde à ces besoins. Les objectifs secondaires incluent la sécurisation des accès, la personnalisation des interfaces et la simplification du parcours utilisateur.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>3. Technologies utilisées</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Le frontend de l’application a été développé avec Flutter Web afin de proposer une interface moderne et responsive. Le backend repose sur Node.js avec Express pour gérer les routes API, l’authentification et la logique métier. La base de données MySQL a été utilisée pour stocker les utilisateurs, les offres, les candidatures et les profils associés.</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Cette architecture permet d’assurer une bonne séparation entre la logique applicative et la couche de présentation, ce qui facilite la maintenance et l’évolutivité du système.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>4. Fonctionnalités principales</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Inscription et connexion sécurisées</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Interface dédiée aux candidats</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Interface dédiée aux entreprises</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Tableau de bord administrateur</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Gestion des offres et des candidatures</w:t></w:r></w:p>
+    <w:p><w:r><w:t>• Notifications, messagerie et gestion de profil</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>5. Interfaces réalisées</w:t></w:r></w:p>
+    <w:p><w:r><w:t>La page d’authentification permet d’accéder au système après identification. Le tableau de bord candidat permet de consulter les offres, de gérer son profil et de suivre ses candidatures. L’interface entreprise permet aux recruteurs de parcourir les profils et de gérer les demandes. Enfin, l’interface administrateur offre un aperçu global du fonctionnement de la plateforme.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>6. Capture d’interface</w:t></w:r></w:p>
+    <w:p><w:r><w:t>La capture ci-dessous illustre l’interface principale de l’application.</w:t></w:r></w:p>
+    <w:p><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="Capture application"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="18288000" cy="10287000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>
+    <w:p><w:r><w:t>Figure 1 : Capture de l’interface principale de l’application.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>7. Conclusion</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Ce projet illustre la possibilité de concevoir une application moderne de recherche d’emploi alliant simplicité, efficacité et accessibilité. Il offre une base solide pour des améliorations futures, notamment l’ajout de fonctionnalités avancées de matching, de suivi des candidatures et d’analyse des besoins des recruteurs.</w:t></w:r></w:p>
+    <w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>
+  </w:body>
+</w:document>

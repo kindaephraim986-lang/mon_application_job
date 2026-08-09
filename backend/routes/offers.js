@@ -161,7 +161,15 @@ async (req, res) => {
             [req.user.id, titre, description, contrat, lieu || null,
              competences || null, niveau || null, experience || null, salaire || null]
         );
-        res.status(201).json({ success: true, id: result.insertId, message: 'Offre créée avec succès' });
+                // Emit a refresh event so clients can re-fetch offers
+                try {
+                    const { getIo } = require('../socket');
+                    getIo().emit('offers:refresh', { id: result.insertId });
+                } catch (e) {
+                    // ignore if socket not initialized
+                }
+
+                res.status(201).json({ success: true, id: result.insertId, message: 'Offre créée avec succès' });
     } catch (error) {
         console.error('CREATE OFFER ERROR:', error);
         res.status(500).json({ message: error.message });
@@ -199,7 +207,11 @@ router.delete('/:id', protect, validate([param('id').isInt({ gt: 0 }).withMessag
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Offre non trouvée ou non autorisé' });
         }
-        res.json({ success: true, message: 'Offre supprimée' });
+                try {
+                    const { getIo } = require('../socket');
+                    getIo().emit('offers:refresh', { id: Number(offerId), deleted: true });
+                } catch (e) {}
+                res.json({ success: true, message: 'Offre supprimée' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

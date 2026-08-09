@@ -28,3 +28,4 @@ Future<bool> openDocumentInBrowser(String signedUrl) async {
     return false;
   }
 }
+

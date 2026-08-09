@@ -2,8 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const { initializeDatabase } = require('./scripts/initialize_database');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '.env') });
+}
 
 const authRoutes = require('./routes/auth');
 const offersRoutes = require('./routes/offers');
@@ -14,6 +17,10 @@ const notificationsRoutes = require('./routes/notifications');
 const paymentsRoutes = require('./routes/payments');
 const ocrRoutes = require('./routes/ocr');
 const healthRoutes = require('./routes/health');
+const filesRoutes = require('./routes/files');
+const profilePhotosRoutes = require('./routes/profilePhotos');
+const adminRoutes = require('./routes/admin');
+let devTestUploadRoutes;
 
 const app = express();
 
@@ -74,7 +81,27 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/profile-photos', profilePhotosRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
+
+// Mount dev-only routes when in development
+if (isDev) {
+  devTestUploadRoutes = require('./routes/dev_test_upload');
+  app.use('/api', devTestUploadRoutes);
+}
+
+// Serve the Flutter web build copied by the root Dockerfile to /app/public.
+const frontendPath = path.join(__dirname, '..', 'public');
+app.use(express.static(frontendPath));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route introuvable' });
@@ -85,7 +112,57 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || 'Erreur serveur interne' });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Serveur actif sur http://0.0.0.0:${PORT}`);
-});
+const { getAvailablePort } = require('./utils/port');
+const PORT = Number(process.env.PORT) || (process.env.NODE_ENV === 'production' ? 3000 : 3001);
+
+async function startServer() {
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.DB_HOST) {
+      console.warn('⚠️ DB_HOST absent in production; continuing with default config.');
+    }
+    const invalidHost = ['localhost', '127.0.0.1', '::1'];
+    if (process.env.DB_HOST && invalidHost.includes(process.env.DB_HOST.trim().toLowerCase())) {
+      console.warn('⚠️ DB_HOST points to localhost in production; continuing but database connectivity may fail.');
+    }
+  }
+
+  try {
+    await initializeDatabase({ quiet: false, maxAttempts: 4, retryDelayMs: 4000 });
+  } catch (error) {
+    console.warn('⚠️ Initialisation de la base MySQL non bloquante:', error.message);
+  }
+
+  // Create an http server and attach socket.io
+  const http = require('http');
+  const server = http.createServer(app);
+  const { init } = require('./socket');
+  try {
+    init(server);
+    console.log('Socket.IO initialisé');
+  } catch (e) {
+    console.warn('Impossible d\'initialiser Socket.IO:', e.message);
+  }
+
+  if (require.main === module) {
+    const listenPort = async () => {
+      try {
+        const resolvedPort = await getAvailablePort(PORT, '0.0.0.0');
+        server.listen(resolvedPort, '0.0.0.0', () => {
+          console.log(`Serveur actif sur http://0.0.0.0:${resolvedPort}`);
+        });
+      } catch (error) {
+        console.error('❌ Impossible de démarrer le serveur:', error.message);
+        process.exit(1);
+      }
+    };
+
+    listenPort();
+  }
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+// Export app for testing
+module.exports = app;

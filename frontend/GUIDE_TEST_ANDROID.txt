@@ -1,0 +1,55 @@
+======================================
+MON APPLICATION JOB - TEST ANDROID
+======================================
+
+INSTALLATION
+============
+
+1. Téléchargez le fichier "app-release.apk" sur votre téléphone.
+2. Ouvrez le fichier APK.
+3. Si Android demande : "Autoriser l'installation depuis une source inconnue" → Acceptez.
+4. Appuyez sur "Installer".
+5. Une fois terminé, appuyez sur "Ouvrir" pour lancer l'application.
+
+COMPTE DE TEST - CANDIDAT
+==========================
+Email    : ephraim@example.com
+Mot passe: password123
+
+COMPTE DE TEST - ENTREPRISE
+===========================
+Email    : contact@techcorp.com
+Mot passe: password123
+
+PREMIER TEST
+============
+
+1. L'application démarre sur l'écran de CONNEXION/INSCRIPTION.
+2. Vous pouvez :
+   - VOUS CONNECTER : cliquez sur l'onglet "Connexion" et utilisez un compte de test
+   - VOUS INSCRIRE : cliquez sur l'onglet "Inscription" et créez un nouveau compte
+
+IMPORTANT
+=========
+- Votre téléphone doit être connecté au Wi-Fi sur le même réseau que votre PC
+- L'application se connecte automatiquement au serveur backend
+- Si l'app crash : redémarrez le téléphone et réinstallez l'APK
+
+FONCTIONNALITES DISPONIBLES
+============================
+✓ Inscription (candidat ou entreprise)
+✓ Connexion
+✓ Voir les offres d'emploi
+✓ Postuler à une offre
+✓ Messagerie instantanée
+✓ Notifications
+✓ Téléchargement de CV
+✓ Upload de photo de profil
+
+BESOIN D'AIDE ?
+===============
+Si vous avez un problème :
+1. Vérifiez que le serveur backend est en cours d'exécution sur votre PC
+2. Vérifiez la connexion Wi-Fi
+3. Redémarrez l'application
+4. Contactez-moi avec le message d'erreur exact

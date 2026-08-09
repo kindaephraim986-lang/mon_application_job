@@ -1,18 +1,42 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'services/profile_photo_service.dart';
 
 class ProfileImagePicker extends StatefulWidget {
-  const ProfileImagePicker({Key? key}) : super(key: key);
+  final String? initialPhotoUrl;
+  final Future<String?> Function(Uint8List imageBytes, String filename)? onImageUploaded;
+
+  const ProfileImagePicker({super.key, this.initialPhotoUrl, this.onImageUploaded});
 
   @override
   State<ProfileImagePicker> createState() => _ProfileImagePickerState();
 }
 
 class _ProfileImagePickerState extends State<ProfileImagePicker> {
-  // On stocke les données brutes de l'image (bytes) plutôt qu'un XFile.
   Uint8List? _imageBytes;
+  String? _photoUrl;
+  bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _photoUrl = widget.initialPhotoUrl;
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileImagePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialPhotoUrl != oldWidget.initialPhotoUrl) {
+      setState(() {
+        _photoUrl = widget.initialPhotoUrl;
+        if (_photoUrl == null || _photoUrl!.isEmpty) {
+          _imageBytes = null;
+        }
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -24,12 +48,33 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       );
 
       if (pickedFile != null) {
-        // 1. Lire les données brutes de l'image.
         final Uint8List imageBytes = await pickedFile.readAsBytes();
         setState(() {
-          // 2. Stocker ces données.
           _imageBytes = imageBytes;
         });
+
+        if (widget.onImageUploaded != null) {
+          setState(() {
+            _isUploading = true;
+          });
+          try {
+            final uploadedUrl = await widget.onImageUploaded!(imageBytes, pickedFile.name);
+            if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+              setState(() {
+                _photoUrl = uploadedUrl;
+                _imageBytes = null;
+              });
+            }
+          } catch (e) {
+            debugPrint('Erreur upload image: $e');
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isUploading = false;
+              });
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint("Erreur lors de la sélection de l'image : $e");
@@ -38,18 +83,24 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   @override
   Widget build(BuildContext context) {
+    final String? resolvedPhotoUrl = _photoUrl != null && _photoUrl!.isNotEmpty
+        ? ProfilePhotoService.generateCachedUrl(_photoUrl!)
+        : null;
+    final ImageProvider? backgroundImage = _imageBytes != null
+      ? MemoryImage(_imageBytes!) as ImageProvider
+      : (resolvedPhotoUrl != null && resolvedPhotoUrl.isNotEmpty ? NetworkImage(resolvedPhotoUrl) as ImageProvider : null);
+
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: _isUploading ? null : _pickImage,
       child: Column(
         children: [
           CircleAvatar(
             radius: 50,
             backgroundColor: Colors.white24,
-            // 3. Afficher l'image à partir des données bytes en mémoire.
-            backgroundImage: _imageBytes != null ? MemoryImage(_imageBytes!) : null,
-            child: _imageBytes == null
-                ? const Icon(Icons.person, size: 50, color: Colors.white70)
-                : null,
+            backgroundImage: backgroundImage,
+            child: _isUploading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : (backgroundImage == null ? const Icon(Icons.person, size: 50, color: Colors.white70) : null),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -61,5 +112,6 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     );
   }
 }
+
 
 

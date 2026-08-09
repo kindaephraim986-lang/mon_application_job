@@ -111,7 +111,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _users.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final user = _users[index];
                         return ListTile(
@@ -132,7 +132,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _offers.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final offer = _offers[index];
                         return Card(
@@ -157,3 +157,4 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
   }
 }
+
