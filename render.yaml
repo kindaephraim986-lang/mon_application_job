@@ -3,7 +3,7 @@ services:
     name: job-research
     env: docker
     dockerfilePath: ./Dockerfile
-    branch: feature/reactive-offers-ui-fix
+    branch: main
     autoDeploy: true
     plan: starter
     healthCheckPath: /api/health
