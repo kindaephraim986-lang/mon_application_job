@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 
 /// Configuration globale de l'application Job research
 class AppConfig {
-  static const String _defaultPublicBaseUrl = 'https://mon-application-job.onrender.com';
+  static const String _defaultPublicBaseUrl = 'https://job-research-tl8g.onrender.com';
   static const String _defaultLocalBaseUrl = 'http://localhost:3001';
   static const String _defaultAndroidLocalBaseUrl = 'http://10.0.2.2:3001';
   static const String _defaultIosLocalBaseUrl = 'http://localhost:3001';

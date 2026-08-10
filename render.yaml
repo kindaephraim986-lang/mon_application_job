@@ -13,10 +13,10 @@ services:
       - key: PORT
         value: "3000"
       - key: CORS_ORIGIN
-        value: "https://mon-application-job.onrender.com"
+        value: "https://job-research-tl8g.onrender.com"
         sync: false
       - key: FRONTEND_URL
-        value: "https://mon-application-job.onrender.com"
+        value: "https://job-research-tl8g.onrender.com"
         sync: false
       - key: DB_HOST
         value: "102.179.222.45"
