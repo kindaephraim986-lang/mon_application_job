@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 
 /// Configuration globale de l'application Job research
 class AppConfig {
-  static const String _defaultPublicBaseUrl = 'https://afrijob-backend.onrender.com';
+  static const String _defaultPublicBaseUrl = 'https://mon-application-job.onrender.com';
   static const String _defaultLocalBaseUrl = 'http://localhost:3001';
-  static const String _defaultAndroidLocalBaseUrl = 'http://192.168.11.106:3001';
+  static const String _defaultAndroidLocalBaseUrl = 'http://10.0.2.2:3001';
   static const String _defaultIosLocalBaseUrl = 'http://localhost:3001';
   // ==================== ENVIRONNEMENT ====================
   
@@ -22,7 +22,7 @@ class AppConfig {
   );
 
   /// URL API de production par défaut si la variable d'environnement n'est pas définie.
-  /// Utilise le backend déjà documenté dans le projet.
+  /// Utilise le backend public Render configuré pour ce projet.
   static const String _productionBaseUrl = _defaultPublicBaseUrl;
 
   static String normalizeBaseUrl(String baseUrl) {
