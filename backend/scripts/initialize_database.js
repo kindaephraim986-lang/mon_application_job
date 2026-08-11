@@ -33,6 +33,15 @@ async function initializeDatabase(options = {}) {
     );
   }
 
+  let attempt = 1;
+  if (!quiet) {
+    console.log('Using MySQL config:', {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+    });
+  }
+
   while (attempt <= maxAttempts) {
     let connection;
     try {

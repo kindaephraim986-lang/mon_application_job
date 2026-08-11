@@ -19,19 +19,22 @@ services:
         value: "https://job-research-tl8g.onrender.com"
         sync: false
       - key: DB_HOST
-        value: "102.179.222.45"
-        sync: false
+        value: "102.180.83.75"
+        sync: true
         # Exemple: db.example.com (MySQL externe, pas localhost)
       - key: DB_PORT
         value: "3306"
+        sync: true
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
         sync: false
       - key: DB_NAME
         value: "bddiane_sp"
+        sync: true
       - key: DB_SSL
         value: "false"
+        sync: true
       - key: JWT_SECRET
         sync: false
       - key: FILE_SIGNATURE_SECRET

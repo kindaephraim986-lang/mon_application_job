@@ -24,6 +24,13 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+console.log('MySQL pool configured with host=%s port=%s database=%s ssl=%s',
+  poolOptions.host,
+  poolOptions.port,
+  poolOptions.database,
+  Boolean(poolOptions.ssl)
+);
+
 const pool = mysql.createPool(poolOptions);
 const db = pool.promise();
 
