@@ -5,7 +5,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY backend/ ./
 
-FROM ghcr.io/cirruslabs/flutter:stable AS frontend-builder
+FROM ghcr.io/cirruslabs/flutter:3.44.4 AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/pubspec.* ./
