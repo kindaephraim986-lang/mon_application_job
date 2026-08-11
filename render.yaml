@@ -7,43 +7,73 @@ services:
     autoDeploy: true
     plan: starter
     healthCheckPath: /api/health
+    healthCheckInterval: 30
+    healthCheckTimeout: 5
+    maxShutdownDelay: 30
+    numInstances: 1
     envVars:
+      # ==================== ENVIRONNEMENT ====================
       - key: NODE_ENV
         value: production
+        sync: true
       - key: PORT
         value: "3000"
+        sync: true
+      - key: LOG_LEVEL
+        value: debug
+        sync: true
+      
+      # ==================== FRONTEND ====================
       - key: CORS_ORIGIN
         value: "https://job-research-tl8g.onrender.com"
         sync: false
+        # À remplacer par votre URL Render
       - key: FRONTEND_URL
         value: "https://job-research-tl8g.onrender.com"
         sync: false
+        # À remplacer par votre URL Render
+      
+      # ==================== BASE DE DONNÉES ====================
+      # ⚠️ IMPORTANT: Configurer ces valeurs dans le Dashboard Render (Secrets)
+      # Ne pas les committer dans le repo
       - key: DB_HOST
-        value: "102.180.83.75"
-        sync: true
-        # Exemple: db.example.com (MySQL externe, pas localhost)
+        sync: false
+        # Exemple: db.c5xw6z0w0w.us-east-1.rds.amazonaws.com
+        # Ou IP du serveur MySQL externe: 102.180.83.75
       - key: DB_PORT
         value: "3306"
         sync: true
       - key: DB_USER
-        value: "your-db-user"
         sync: false
+        # Exemple: job_research_user
       - key: DB_PASSWORD
-        value: "your-db-password"
         sync: false
-        # Replace these placeholder values with your actual DB credentials in Render service settings before deployment.
+        # Exemple: GeneratedSecurePassword123!
       - key: DB_NAME
         value: "bddiane_sp"
         sync: true
       - key: DB_SSL
         value: "false"
         sync: true
+      - key: DB_CONNECTION_LIMIT
+        value: "10"
+        sync: true
+      
+      # ==================== SÉCURITÉ ====================
+      # ⚠️ IMPORTANT: Générer des secrets forts et les configurer comme Secrets Render
       - key: JWT_SECRET
         sync: false
+        # Générer: openssl rand -base64 32
+        # Exemple: aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV1wX2yZ3aB=
       - key: FILE_SIGNATURE_SECRET
         sync: false
-      - key: LOG_LEVEL
-        value: info
+        # Générer: openssl rand -base64 32
+        # Exemple: xB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV1wX2yZ3aB=
+      
+      # ==================== STOCKAGE ====================
       - key: UPLOAD_DIR
-        value: /tmp/uploads
+        value: "/tmp/uploads"
+        sync: true
+        # Les fichiers sont stockés dans /tmp sur Render
+        # Pour production, utiliser S3 ou Azure Blob Storage
 
