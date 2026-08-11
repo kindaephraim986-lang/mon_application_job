@@ -5,11 +5,11 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY backend/ ./
 
-FROM ghcr.io/cirruslabs/flutter:3.44.4 AS frontend-builder
+FROM ghcr.io/cirruslabs/flutter:stable AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/pubspec.* ./
-RUN flutter pub get
+RUN flutter --version && flutter pub get
 
 COPY frontend/ ./
 RUN flutter clean && flutter build web --release --dart-define=APP_ENV=production --no-wasm-dry-run
