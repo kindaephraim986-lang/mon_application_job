@@ -6,7 +6,7 @@ const fs = require('fs');
 const { protect } = require('../middleware/auth');
 const { validateCNIBUpload } = require('../middleware/cnibValidation');
 
-const UPLOAD_DIR = path.join(__dirname, '../uploads');
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../uploads'));
 
 function ensureUploadDir() {
     if (!fs.existsSync(UPLOAD_DIR)) {

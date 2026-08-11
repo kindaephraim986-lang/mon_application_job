@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const UPLOAD_DIR = path.join(__dirname, '../uploads/profile-photos');
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR ? path.join(process.env.UPLOAD_DIR, 'profile-photos') : path.join(__dirname, '../uploads/profile-photos'));
 
 // Créer le répertoire s'il n'existe pas
 if (!fs.existsSync(UPLOAD_DIR)) {

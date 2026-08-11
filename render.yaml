@@ -26,9 +26,12 @@ services:
         value: "3306"
         sync: true
       - key: DB_USER
+        value: "your-db-user"
         sync: false
       - key: DB_PASSWORD
+        value: "your-db-password"
         sync: false
+        # Replace these placeholder values with your actual DB credentials in Render service settings before deployment.
       - key: DB_NAME
         value: "bddiane_sp"
         sync: true

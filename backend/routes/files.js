@@ -11,7 +11,7 @@ const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { generateSignedFileUrl, verifyFileSignature } = require('../middleware/fileSignature');
 
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
+const UPLOADS_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../uploads'));
 
 /**
  * POST /api/files/generate-signed-url

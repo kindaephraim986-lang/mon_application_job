@@ -7,7 +7,8 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-const OCR_TEMP_DIR = path.join(__dirname, '../uploads/ocr_temp');
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../uploads'));
+const OCR_TEMP_DIR = path.join(UPLOAD_DIR, 'ocr_temp');
 if (!fs.existsSync(OCR_TEMP_DIR)) {
   fs.mkdirSync(OCR_TEMP_DIR, { recursive: true });
 }

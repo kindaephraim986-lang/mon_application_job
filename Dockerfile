@@ -19,10 +19,9 @@ WORKDIR /app/backend
 
 COPY --from=backend-builder /app/backend .
 COPY --from=frontend-builder /app/frontend/build/web /app/public
-COPY bddiane_sp.sql /app/bddiane_sp.sql
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
-CMD ["sh", "-c", "chmod +x /app/backend/scripts/render_init.sh && /app/backend/scripts/render_init.sh && node /app/backend/server.js"]
+CMD ["node", "/app/backend/server.js"]
